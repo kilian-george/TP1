@@ -855,8 +855,8 @@ public class Database {
 	        ResultSet rs = pstmt.executeQuery();
 	        
 	        if (rs.next()) {
-	            return rs.getString("firstName"); // Return last name role if user exists
-	        }
+	            return rs.getString("LastName"); // Return last name role if user exists
+	        } //Fixed this bug
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	    }
@@ -906,8 +906,8 @@ public class Database {
 	        ResultSet rs = pstmt.executeQuery();
 	        
 	        if (rs.next()) {
-	            return rs.getString("firstName"); // Return the preferred first name if user exists
-	        }
+	            return rs.getString("preferredFirstName"); // Return the preferred first name if user exists
+	        } //Fixed this minor typo
 			
 	    } catch (SQLException e) {
 	        e.printStackTrace();
@@ -1045,6 +1045,7 @@ public class Database {
 	 *  
 	 */
 	// Update a users role
+	//**This method fully supports the Admin Story 5 task** -Ronaldo
 	public boolean updateUserRole(String username, String role, String value) {
 		if (role.compareTo("Admin") == 0) {
 			String query = "UPDATE userDB SET adminRole = ? WHERE username = ?";
