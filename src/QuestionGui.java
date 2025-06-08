@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -15,10 +16,12 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.layout.*;
+import javafx.stage.Stage;
 import javafx.scene.control.ListCell;
 
 import java.time.LocalDateTime;
@@ -40,7 +43,6 @@ public class QuestionGui {
 	private int currentIndex = 0;
 	private boolean selection = false;
 	private Consumer<Parent> setViewCallback;
-
 	public void setOnViewSwitch(Consumer<Parent> callback) {
 		this.setViewCallback = callback;
 	}
@@ -48,10 +50,10 @@ public class QuestionGui {
 	public Parent getView() {
 		// Load data will have to be changed for group project
 		bank = FileStorage.load();
-
 		// Layout
-		BorderPane root = new BorderPane();
-		root.setPadding(new Insets(20));
+		BorderPane layout = new BorderPane();
+		layout.setPadding(new Insets(20));
+
 		// make the list of questions into a single viewer
 		ListView<Question> questionsList = new ListView<>();
 		ObservableList<Question> questions = FXCollections.observableArrayList(bank.getQuestions());
@@ -74,11 +76,13 @@ public class QuestionGui {
 		// new question button
 		Button newQuestionButton = new Button("Ask New Question");
 		newQuestionButton.setOnAction(e -> showNewQuestion());
-		HBox topBar = new HBox(10, newQuestionButton);
+		HBox resolvedButtonBox = createResloveListButton();
+		HBox UnresolvedButtonBox = createUnresloveListButton();
+		HBox topBar = new HBox(10, newQuestionButton, resolvedButtonBox, UnresolvedButtonBox);
 		topBar.setPadding(new Insets(10));
-		root.setTop(topBar);
-		root.setCenter(questionsList);
-		return root;
+		layout.setTop(topBar);
+		layout.setCenter(questionsList);
+		return layout;
 	}
 
 	private void showDetailView(Question question) {
@@ -90,10 +94,15 @@ public class QuestionGui {
 		List<Node> questionLabels = createQuestionData(question);
 		VBox answersBox = createAnswersBox(question);
 		HBox navigationButtons = createNavigationButtons(question);
+		HBox showResolvedQuestions = createResloveListButton();
+		HBox showUnresolvedQuestions = createUnresloveListButton();
+		detailBox.getChildren().add(topBox);
 		detailBox.getChildren().addAll(questionLabels);
 		detailBox.getChildren().add(new Label("Answers:"));
 		detailBox.getChildren().add(answersBox);
 		detailBox.getChildren().add(navigationButtons);
+		detailBox.getChildren().add(showResolvedQuestions);
+		detailBox.getChildren().add(showUnresolvedQuestions);
 		switchView(detailBox);
 	}
 
@@ -140,9 +149,7 @@ public class QuestionGui {
 				return Integer.compare(a2.getScore(), a1.getScore());
 			});
 			
-			boolean hideResolve = question.getAnswers().stream().anyMatch(Answer::getResolved);
-			
-			
+			//boolean hideResolve = question.getAnswers().stream().anyMatch(Answer::getResolved);
 			
 			for (Answer a : sortAnswers) {
 				VBox commentBox = commentHelper(a, question);
@@ -191,7 +198,57 @@ public class QuestionGui {
 		}
 		return answersBox;
 	}
-
+	
+	private HBox createResloveListButton() {
+		Button listResolvedQuestionButton = new Button("click for resolved questions");
+		listResolvedQuestionButton.setOnAction(e ->{
+			List<Question> questionResList = new ArrayList<>();
+			QuestionList bank = FileStorage.load();
+			
+			for(Question q:bank.getQuestions()) {
+				if(q.isResolved()) {
+					questionResList.add(q);
+				}
+			}
+			VBox resolvedQuestionBox = new VBox(10);
+			for(Question q :questionResList) {
+				Label qLabel = new Label(q.getQuestionText());
+				resolvedQuestionBox.getChildren().add(qLabel);
+			}
+			Stage resolvedStage = new Stage();
+			Scene scene = new Scene(new ScrollPane(resolvedQuestionBox), 400, 300);
+			resolvedStage.setTitle("ResolvedQuestions");
+			resolvedStage.setScene(scene);
+			resolvedStage.show();
+		});
+		return new HBox(listResolvedQuestionButton);
+	}
+	
+	private HBox createUnresloveListButton() {
+		Button listUnesolvedQuestionButton = new Button("click for unresolved questions");
+		listUnesolvedQuestionButton.setOnAction(e ->{
+			List<Question> questionResList = new ArrayList<>();
+			QuestionList bank = FileStorage.load();
+			
+			for(Question q:bank.getQuestions()) {
+				if(!q.isResolved()) {
+					questionResList.add(q);
+				}
+			}
+			VBox unresolvedQuestionBox = new VBox(10);
+			for(Question q :questionResList) {
+				Label qLabel = new Label(q.getQuestionText());
+				unresolvedQuestionBox.getChildren().add(qLabel);
+			}
+			Stage resolvedStage = new Stage();
+			Scene scene = new Scene(new ScrollPane(unresolvedQuestionBox), 400, 300);
+			resolvedStage.setTitle("UnesolvedQuestions");
+			resolvedStage.setScene(scene);
+			resolvedStage.show();
+		});
+		return new HBox(listUnesolvedQuestionButton);
+	}
+	
 	private HBox createNavigationButtons(Question question) {
 		Button addAnswerButton = new Button("Add Answer");
 		addAnswerButton.setOnAction(e -> showaddAnswer(question));
@@ -228,8 +285,7 @@ public class QuestionGui {
 
 	private void showaddAnswer(Question current) {
 		Label nameLabel = new Label("name is:");
-		Label questionLabel = new Label("question is:");
-		questionLabel.setText(current.getQuestionText());
+		Label questionLabel = new Label("question is:"+current.getQuestionText());
 		VBox answersBox = new VBox(10);
 		// setting up naming area
 		nameLabel.setText("name:");
@@ -246,10 +302,13 @@ public class QuestionGui {
 		Button submitButton = new Button("Submit");
 		submitButton.setOnAction(e -> {
 			addAnswer(current, newName.getText(), newAnswer.getText());
-			showDetailView(current);
+			QuestionList updatebank = FileStorage.load();
+			Question updated = updatebank.getQuestions().stream().filter(q -> q.getQuestionText().equals(current.getQuestionText()))
+		.findFirst().orElse(current);
+			showDetailView(updated);
 		});
 		Button cancelButton = new Button("Cancel");
-		cancelButton.setOnAction(e -> showDetailView(current));
+		cancelButton.setOnAction(e ->switchView(buildMainView()));
 		VBox inputBox = new VBox(10, nameLabel, newName, questionLabel, newAnswer, submitButton, cancelButton);
 		answersBox.getChildren().add(inputBox);
 		switchView(answersBox);
@@ -260,6 +319,7 @@ public class QuestionGui {
 			Answer ans = new Answer(name, answerText, 0);
 			current.addAnswer(ans);
 			FileStorage.save(bank);
+			bank= FileStorage.load();
 		} else {
 			Alert alert = new Alert(Alert.AlertType.ERROR, "must input name and answer");
 			alert.showAndWait();
@@ -349,9 +409,44 @@ public class QuestionGui {
 		return questionBox;
 	}
 
+	private Parent buildMainView() {
+		BorderPane layout = new BorderPane();
+		layout.setPadding(new Insets(20));
+
+		ObservableList<Question> questions = FXCollections.observableArrayList(bank.getQuestions());
+		ListView<Question> questionsList = new ListView<>(questions);
+
+		questionsList.setCellFactory(param -> new ListCell<Question>() {
+			@Override
+			protected void updateItem(Question item, boolean notHere) {
+				super.updateItem(item, notHere);
+				setText((notHere || item == null) ? null : item.getQuestionText());
+			}
+		});
+		questionsList.setOnMouseClicked(event -> {
+			if (event.getClickCount() == 2) {
+				Question selected = questionsList.getSelectionModel().getSelectedItem();
+				if (selected != null) {
+					showDetailView(selected);
+				}
+			}
+		});
+		Button newQuestionButton = new Button("Ask New Question");
+		newQuestionButton.setOnAction(e -> showNewQuestion());
+		HBox resolvedButtonBox = createResloveListButton();
+		HBox topBar = new HBox(10, newQuestionButton, resolvedButtonBox);
+		topBar.setPadding(new Insets(10));
+
+		layout.setTop(topBar);
+		layout.setCenter(questionsList);
+
+		return layout;
+	}
+	
 	private void switchView(Parent newView) {
-		if (setViewCallback != null) {
+		if(setViewCallback !=null) {
 			setViewCallback.accept(newView);
 		}
+		    
 	}
 }

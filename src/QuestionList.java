@@ -20,6 +20,9 @@ public List<Question> getQuestionByName(String name){
 public List<Question> getUnresolvedQuestions(){
 	return questions.stream().filter(q->!q.isResolved()).collect(Collectors.toList());
 }
+public List<Question> getResolvedQuestions(){
+	return questions.stream().filter(q->q.isResolved()).collect(Collectors.toList());
+}
 public void  deleteQuestion(Question question) {
 	questions.remove(question);
 }
