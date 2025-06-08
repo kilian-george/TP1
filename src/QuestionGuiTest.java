@@ -10,7 +10,7 @@ public class QuestionGuiTest extends Application {
 
     @Override
     public void start(Stage stage) {
-        QuestionGui gui = new QuestionGui(); 
+        QuestionGuiStandalone gui = new QuestionGuiStandalone(); 
         
         
         StackPane root = new StackPane();

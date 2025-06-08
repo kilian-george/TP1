@@ -6,18 +6,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Question implements Serializable{
-	private static final long serialVersionUID = 1L;
+	private int Id;
 	private String questionAsked;
 	private boolean resolved= false;
 	private String name;
 	private String category;
 	private LocalDateTime timestamp = LocalDateTime.now();
 	private List<Answer> answers = new ArrayList<>();
-public Question(String name, String category, String questionAsked) {
+public Question(String name, String category, String questionAsked, int id) {
 	this.name = name;
+	this.Id=id;
 	this.category = category;
 	this.questionAsked=questionAsked;
 	this.resolved = false;
+}
+public Question(String name, String category, String questionAsked) {
+	this.name = name;
+	this.category=category;
+	this.questionAsked = questionAsked;
+}
+
+public void setId(int val) {
+	Id=val;
+}
+public int getId() {
+	return Id;
+}
+public void setAnswers(List ansList) {
+	answers.addAll(ansList);
 }
 public LocalDateTime getTime() {
 	return timestamp;

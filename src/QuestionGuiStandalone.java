@@ -24,7 +24,6 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.scene.control.ListCell;
 
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -39,26 +38,25 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import databaseClasses.Database;
-
-public class QuestionGui {
+public class QuestionGuiStandalone {
+	private QuestionList bank;
 	private int currentIndex = 0;
-	Database database;
+	private boolean selection = false;
 	private Consumer<Parent> setViewCallback;
 	public void setOnViewSwitch(Consumer<Parent> callback) {
 		this.setViewCallback = callback;
 	}
 
-	public Parent getView(Database database) throws SQLException {
+	public Parent getView() {
 		// Load data will have to be changed for group project
-		this.database=database;
+		bank = FileStorage.load();
 		// Layout
 		BorderPane layout = new BorderPane();
 		layout.setPadding(new Insets(20));
 
 		// make the list of questions into a single viewer
 		ListView<Question> questionsList = new ListView<>();
-		ObservableList<Question> questions = FXCollections.observableArrayList(database.getAllQuestions());
+		ObservableList<Question> questions = FXCollections.observableArrayList(bank.getQuestions());
 		questionsList.setItems(questions);
 		questionsList.setCellFactory(param -> new ListCell<Question>() {
 			@Override
@@ -116,19 +114,9 @@ public class QuestionGui {
 			delAlert.setTitle("Delete question");
 			Optional<ButtonType> resAlert = delAlert.showAndWait();
 			if (resAlert.isPresent() && resAlert.get() == ButtonType.OK) {
-				try {
-					database.deleteQuestion(question.getId());
-				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				database.saveQuestion(question);
-				try {
-					switchView(getView(database));
-				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+				bank.deleteQuestion(question);
+				FileStorage.save(bank);
+				switchView(getView());
 			}
 
 		});
@@ -143,7 +131,7 @@ public class QuestionGui {
 		Label categoryLabel = new Label("Category is: " + question.getCategory());
 		questionLabel.setWrapText(true);
 
-		Label nameLabel = new Label(database.getCurrentUsername());
+		Label nameLabel = new Label("Name of questioner: " + question.getName());
 		return List.of(questionLabel, nameLabel, categoryLabel);
 	}
 
@@ -182,14 +170,14 @@ public class QuestionGui {
 					scoreLabel.setText("score: " + a.getScore());
 					upvoteButton.setDisable(true);
 					downvoteButton.setDisable(true);
-					database.saveAnswer(a, question.getId());
+					FileStorage.save(bank);
 				});
 				downvoteButton.setOnAction(e -> {
 		            a.setScore(-1);
 		            scoreLabel.setText("score: " + a.getScore());
 		            upvoteButton.setDisable(true);
 		            downvoteButton.setDisable(true);
-		            database.saveAnswer(a, question.getId());
+		            FileStorage.save(bank);
 		        });
 				
 				Button resolveButton = new Button("resolved question");
@@ -199,7 +187,7 @@ public class QuestionGui {
 						other.setResolved(false);
 					}
 					a.setResolved(true);
-					database.saveAnswer(a, question.getId());
+					FileStorage.save(bank);
 					showDetailView(question);
 				});
 				HBox answerHorz = new HBox(upvoteButton, downvoteButton, scoreLabel, resolvedLabel, 
@@ -214,16 +202,19 @@ public class QuestionGui {
 	private HBox createResloveListButton() {
 		Button listResolvedQuestionButton = new Button("click for resolved questions");
 		listResolvedQuestionButton.setOnAction(e ->{
-			String currentUser = database.getCurrentUsername();
-			List<Question> allQ = database.getAllQuestions();
-			List<Question> myResolved = allQ.stream()
-					.filter(q -> q.isResolved() && q.getName().equals(currentUser))
-		.collect(Collectors.toList());
-			VBox resolvedQuestionBox = new VBox(10);
-			for(Question q:myResolved) {
-				Label qLabel = new Label(q.getQuestionText());
-			resolvedQuestionBox.getChildren().add(qLabel);
+			List<Question> questionResList = new ArrayList<>();
+			QuestionList bank = FileStorage.load();
+			
+			for(Question q:bank.getQuestions()) {
+				if(q.isResolved()) {
+					questionResList.add(q);
 				}
+			}
+			VBox resolvedQuestionBox = new VBox(10);
+			for(Question q :questionResList) {
+				Label qLabel = new Label(q.getQuestionText());
+				resolvedQuestionBox.getChildren().add(qLabel);
+			}
 			Stage resolvedStage = new Stage();
 			Scene scene = new Scene(new ScrollPane(resolvedQuestionBox), 400, 300);
 			resolvedStage.setTitle("ResolvedQuestions");
@@ -234,16 +225,18 @@ public class QuestionGui {
 	}
 	
 	private HBox createUnresloveListButton() {
-		String currentUser = database.getCurrentUsername();
 		Button listUnesolvedQuestionButton = new Button("click for unresolved questions");
 		listUnesolvedQuestionButton.setOnAction(e ->{
-			List<Question> bank = database.getAllQuestions();
-			List<Question> myUnresolved = bank.stream()
-					.filter(q -> !q.isResolved() && q.getName().equals(currentUser))
-		.collect(Collectors.toList());
+			List<Question> questionResList = new ArrayList<>();
+			QuestionList bank = FileStorage.load();
 			
+			for(Question q:bank.getQuestions()) {
+				if(!q.isResolved()) {
+					questionResList.add(q);
+				}
+			}
 			VBox unresolvedQuestionBox = new VBox(10);
-			for(Question q :myUnresolved) {
+			for(Question q :questionResList) {
 				Label qLabel = new Label(q.getQuestionText());
 				unresolvedQuestionBox.getChildren().add(qLabel);
 			}
@@ -261,14 +254,7 @@ public class QuestionGui {
 		addAnswerButton.setOnAction(e -> showaddAnswer(question));
 
 		Button backButton = new Button("Back");
-		backButton.setOnAction(e -> {
-			try {
-				switchView(getView(database));
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		});
+		backButton.setOnAction(e -> switchView(getView()));
 		HBox navBox = new HBox(10, addAnswerButton, backButton);
 		return navBox;
 
@@ -288,7 +274,7 @@ public class QuestionGui {
 			String text = commentField.getText().trim();
 			if (!text.isEmpty()) {
 				answer.addComment(new Comment(text));
-				database.saveAnswer(answer, question.getId());
+				FileStorage.save(bank);
 				showDetailView(question);
 			}
 		});
@@ -316,8 +302,8 @@ public class QuestionGui {
 		Button submitButton = new Button("Submit");
 		submitButton.setOnAction(e -> {
 			addAnswer(current, newName.getText(), newAnswer.getText());
-			List<Question> updatebank = database.getAllQuestions();
-			Question updated = updatebank.stream().filter(q -> q.getQuestionText().equals(current.getQuestionText()))
+			QuestionList updatebank = FileStorage.load();
+			Question updated = updatebank.getQuestions().stream().filter(q -> q.getQuestionText().equals(current.getQuestionText()))
 		.findFirst().orElse(current);
 			showDetailView(updated);
 		});
@@ -332,7 +318,8 @@ public class QuestionGui {
 		if (name != null && !name.isEmpty() && answerText != null && !answerText.isEmpty()) {
 			Answer ans = new Answer(name, answerText, 0);
 			current.addAnswer(ans);
-			database.saveAnswer(ans, current.getId());
+			FileStorage.save(bank);
+			bank= FileStorage.load();
 		} else {
 			Alert alert = new Alert(Alert.AlertType.ERROR, "must input name and answer");
 			alert.showAndWait();
@@ -340,7 +327,7 @@ public class QuestionGui {
 	}
 
 	private void showNewQuestion() {
-		ComboBox<String> questionBox = questionComboBox(database.getAllQuestions(),
+		ComboBox<String> questionBox = questionComboBox(bank.getQuestions(),
 				matchedQuestion -> showDetailView(matchedQuestion));
 
 		VBox layout = new VBox(10);
@@ -359,29 +346,17 @@ public class QuestionGui {
 			String questionText = questionBox.getEditor().getText();
 
 			if (!name.isEmpty() && !category.isEmpty() && !questionText.isEmpty()) {
-				Question q = new Question(name, category, questionText, currentIndex);
-				int questionId = database.saveQuestion(q);
-				q.setId(questionId);
-				try {
-					switchView(getView(database));
-				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} // Return to main view
+				Question q = new Question(name, category, questionText);
+				bank.getQuestions().add(q);
+				FileStorage.save(bank);
+				switchView(getView()); // Return to main view
 			} else {
 				new Alert(Alert.AlertType.ERROR, "All fields must be filled.").showAndWait();
 			}
 		});
 
 		Button cancel = new Button("Cancel");
-		cancel.setOnAction(e -> {
-			try {
-				switchView(getView(database));
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		});
+		cancel.setOnAction(e -> switchView(getView()));
 
 		layout.getChildren().addAll(new Label("Ask a New Question"), nameField, categoryField, questionBox, submit,
 				cancel);
@@ -438,7 +413,7 @@ public class QuestionGui {
 		BorderPane layout = new BorderPane();
 		layout.setPadding(new Insets(20));
 
-		ObservableList<Question> questions = FXCollections.observableArrayList(database.getAllQuestions());
+		ObservableList<Question> questions = FXCollections.observableArrayList(bank.getQuestions());
 		ListView<Question> questionsList = new ListView<>(questions);
 
 		questionsList.setCellFactory(param -> new ListCell<Question>() {
