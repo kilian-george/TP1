@@ -5,11 +5,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import entityClasses.User;
+import questionAndAnswer.Answer;
+import questionAndAnswer.Comment;
+import questionAndAnswer.Question;
 
 /*******
  * <p> Title: Database Class. </p>
@@ -127,8 +131,159 @@ public class Database {
 	    		+ "emailAddress VARCHAR(255), "
 	            + "role VARCHAR(10))";
 	    statement.execute(invitationCodesTable);
+	    //create the Questions table
+	    String questionsTable = "CREATE TABLE IF NOT EXISTS Questions ("
+	    	    + "id INT AUTO_INCREMENT PRIMARY KEY, "
+	    		+"isResolved BOOLEAN DEFAULT FALSE"
+	    	    + "username VARCHAR(255), "
+	    	    + "category VARCHAR(255), "
+	    	    + "questionText TEXT)";
+	    	statement.execute(questionsTable);
+
+	    	// Create the Answers table
+	    	String answersTable = "CREATE TABLE IF NOT EXISTS Answers ("
+	    	    + "id INT AUTO_INCREMENT PRIMARY KEY, "
+	    	    + "questionId INT, "
+	    	    +"username VARCHAR(255),"
+	    	    + "answerText TEXT, "
+	    	    + "score INt,"
+	    	    + "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE)";
+	    	statement.execute(answersTable);
+	    	String commentsTable = "CREATE TABLE IF NOT EXISTS Comments ("
+	    		+"id INT PRIMARY KEY AUTO_INCREMENT,"
+	    		+"answer_id INT,"
+	    		+"text TEXT,"
+	    		+"timestamp TEXT,"
+	    		+"FOREIGN KEY (answer_id) REFERENCES Answers(id) ON DELETE CASCADE"
+	    		+")";
+	    		statement.execute(commentsTable);
+	    			
+	}
+	public List<Question> getAllQuestions() {
+	    List<Question> questions = new ArrayList<>();
+
+	    String query = "SELECT * FROM Questions";
+	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	        ResultSet rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	            int id = rs.getInt("id");
+	            String username = rs.getString("username");
+	            String category = rs.getString("category");
+	            String questionText = rs.getString("questionText");
+	            boolean isResolved = rs.getBoolean("isResolved");
+
+	            Question q = new Question(username, category, questionText, id);
+	            q.setId(id); 
+	            q.setResolved(isResolved);
+	            q.setAnswers(getAnswersForQuestion(id));
+
+	            questions.add(q);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return questions;
 	}
 
+	private List<Answer> getAnswersForQuestion(int questionId) {
+	    List<Answer> answers = new ArrayList<>();
+	    String query = "SELECT * FROM Answers WHERE questionId = ?";
+	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	    	pstmt.setInt(1, questionId);
+	        ResultSet rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	            String username = rs.getString("username");
+	            String answerText = rs.getString("answerText");
+	            int score = rs.getInt("score");
+	            answers.add(new Answer(username, answerText, score));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return answers;
+	}
+	
+	public int saveQuestion(Question question) {
+	    String insert = "INSERT INTO Questions (username, category, questionText, isResolved) VALUES (?, ?, ?, ?)";
+	    try (PreparedStatement pstmt = connection.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
+	        pstmt.setString(1, question.getName());
+	        pstmt.setString(2, question.getCategory());
+	        pstmt.setString(3, question.getQuestionText());
+	        pstmt.setBoolean(4, question.isResolved());
+	        pstmt.executeUpdate();
+
+	        ResultSet keys = pstmt.getGeneratedKeys();
+	        if (keys.next()) {
+	            return keys.getInt(1); // return generated question ID
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return -1;
+	}
+	
+	public void deleteQuestion(int id) throws SQLException {
+	    String deleteAnswers = "DELETE FROM Answers WHERE questionId = ?";
+	    try (PreparedStatement pstmt = connection.prepareStatement(deleteAnswers)) {
+	        pstmt.setInt(1, id);
+	        pstmt.executeUpdate();
+	    }
+
+	    String deleteQuestion = "DELETE FROM Questions WHERE id = ?";
+	    try (PreparedStatement pstmt = connection.prepareStatement(deleteQuestion)) {
+	        pstmt.setInt(1, id);
+	        pstmt.executeUpdate();
+	    }
+	}
+	
+	public void saveAnswer(Answer answer, int questionId) {
+	    String insert = "INSERT INTO Answers (questionId, username, answerText) VALUES (?, ?, ?)";
+	    try (PreparedStatement pstmt = connection.prepareStatement(insert)) {
+	        pstmt.setInt(1, questionId);
+	        pstmt.setString(2, answer.getName());
+	        pstmt.setString(3, answer.getAnswerText());
+	        pstmt.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	public void saveComment(int answerId, Comment comment) {
+	    String insert = "INSERT INTO Comments (answer_id, text, timestamp) VALUES (?, ?, ?)";
+	    try (PreparedStatement pstmt = connection.prepareStatement(insert))
+	          {
+
+	        pstmt.setInt(1, answerId);
+	        pstmt.setString(2, comment.getText());
+	        pstmt.setString(3, comment.gettimestamp().toString());  // ISO format is safe
+	        pstmt.executeUpdate();
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	public List<Comment> getCommentsByAnswerId(int answerId) {
+	    List<Comment> comments = new ArrayList<>();
+	    String query = "SELECT text, timestamp FROM Comments WHERE answer_id = ? ORDER BY id";
+
+	    try ( PreparedStatement pstmt = connection.prepareStatement(query))
+	         {
+
+	        pstmt.setInt(1, answerId);
+	        ResultSet rs = pstmt.executeQuery();
+
+	        while (rs.next()) {
+	            String text = rs.getString("text");
+	            comments.add(new Comment(text));
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+
+	    return comments;
+	}
 
 /*******
  * <p> Method: isDatabaseEmpty </p>
