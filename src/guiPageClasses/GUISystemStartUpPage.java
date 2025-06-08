@@ -453,23 +453,32 @@ public class GUISystemStartUpPage {
                 database.register(user);
                 System.out.println("Administrator Username and Password have been set.");
                 
-                // Navigate to the Account Update Page
-                GUISystemStartUpPage.theAdminUpdatePage = 
-                		new GUIAdminUpdatePage(primaryStage, theRootPane, database, user);
-            	} catch (SQLException e) {
+             // Shows confirmation and forces a fresh login 
+                Alert info = new Alert(Alert.AlertType.INFORMATION);
+                info.setTitle("Admin Account Created");
+                info.setHeaderText(null);
+                info.setContentText("Your admin account has been created. Please log in now.");
+                info.showAndWait();
+         
+                firstInvocation = false;
+             
+             setupNormalLogin();
+          
+             setup();
+             return;
+
+            } catch (SQLException e) {
                 System.err.println("Database error: " + e.getMessage());
                 e.printStackTrace();
             }
 
-		}
-		else {
-			// The two passwords are NOT the same, so clear the passwords, explain the passwords
-			// must be the same, and clear the message as soon as the first character is typed.
-			text_AdminPassword1.setText("");
-			text_AdminPassword2.setText("");
-			label_PasswordsDoNotMatch.setText("The two passwords must match. Please try again!");
-		}
-	}
+        } else {
+            // The two passwords are NOT the same
+            text_AdminPassword1.setText("");
+            text_AdminPassword2.setText("");
+            label_PasswordsDoNotMatch.setText("The two passwords must match. Please try again!");
+        }
+        	}
 	
 	private void doLogin() {		
 		String username = text_Username.getText();
@@ -501,7 +510,22 @@ public class GUISystemStartUpPage {
     		return;
     	}
     	
+    	
 		int numberOfRoles = database.getNumberOfRoles(user);		
+		
+		// Rejects having O roles
+				if (numberOfRoles == 0) {
+				    Alert alertNoRoles = new Alert(Alert.AlertType.INFORMATION);
+				    alertNoRoles.setTitle("No Roles Assigned");
+				    alertNoRoles.setHeaderText(null);
+				    alertNoRoles.setContentText(
+				        "Your account currenlty has no roles assigned. Contact an administrator for help."
+				    );
+				    alertNoRoles.showAndWait();
+				    return;
+				}
+		
+		
 		if (numberOfRoles == 1) {
 			// Single Account Home Page - The user has no choice here
 			
