@@ -2,6 +2,9 @@ package guiPageClasses;
 
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+
+import java.sql.SQLException;
+
 import databaseClasses.Database;
 import entityClasses.User;
 
@@ -84,7 +87,12 @@ public class GUISingleRoleDispatch {
 			new GUIAdminHomePage(primaryStage, theRootPane, theDatabase, theUser);
 		} else if (user.getStudentRole()) {
 			theRoot.getChildren().clear();
-			new GUIStudentHomePage(primaryStage, theRootPane, theDatabase, theUser);			
+			try {
+				new GUIStudentHomePage(primaryStage, theRootPane, theDatabase, theUser);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}			
 		} else if (user.getReviewerRole()) {
 			theRoot.getChildren().clear();
 			new GUIReviewerHomePage(primaryStage, theRootPane, theDatabase, theUser);			

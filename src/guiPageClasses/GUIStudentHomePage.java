@@ -1,15 +1,19 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
+
 import applicationMainMethodClasses.FCMainClass;
+import databaseClasses.Database;
+import entityClasses.User;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import databaseClasses.Database;
-import entityClasses.User;
+import questionAndAnswer.QuestionGui;
 
 /*******
  * <p> Title: GUIReviewerHomePage Class. </p>
@@ -44,7 +48,6 @@ public class GUIStudentHomePage {
 	
 	private Button button_Logout = new Button("Logout");
 	private Button button_Quit = new Button("Quit");
-
 	private Stage primaryStage;	
 	private Pane theRootPane;
 	private Database theDatabase;
@@ -71,10 +74,11 @@ public class GUIStudentHomePage {
 	 * @param database specifies the Database to be used by this GUI and it's methods
 	 * 
 	 * @param user specifies the User for this GUI and it's methods
+	 * @throws SQLException 
 	 * 
 	 */
 	@SuppressWarnings("unused")
-	public GUIStudentHomePage(Stage ps, Pane theRoot, Database database, User user) {
+	public GUIStudentHomePage(Stage ps, Pane theRoot, Database database, User user) throws SQLException {
 		GUISystemStartUpPage.theStudentHomePage = this;
 		
 		FCMainClass.activeHomePage = 2;
@@ -114,19 +118,32 @@ public class GUIStudentHomePage {
 	 * 
 	 * <p> Description: This method is called to reset the page and then populate it with new
 	 * content.</p>
+	 * @throws SQLException 
 	 * 
 	 */
-	public void setup() {
+	public void setup() throws SQLException {
+		//testing testing!!!!!!
+		QuestionGui questionGui = new QuestionGui();
+		Parent questionMod = questionGui.getView(theDatabase);
+		
+		setupViewUI(questionMod, 20, 100, FCMainClass.WINDOW_WIDTH-40);
 		theRootPane.getChildren().clear();		
 	    theRootPane.getChildren().addAll(
 			label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
 	        line_Separator4, 
 	        button_Logout,
-	        button_Quit
+	        //testing testing
+	        button_Quit,questionMod
 	    );
 			
 	}
-	
+	private void setupViewUI(Parent view, double x, double y, double width) {
+		view.setLayoutX(x);
+		view.setLayoutY(y);
+		if (width > 0) {
+			view.prefWidth(width);
+		}
+	}
 	/**********
 	 * Private local method to initialize the standard fields for a label
 	 */

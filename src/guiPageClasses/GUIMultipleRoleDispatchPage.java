@@ -1,6 +1,7 @@
 package guiPageClasses;
 
-	import java.util.ArrayList;
+	import java.sql.SQLException;
+import java.util.ArrayList;
 	import java.util.List;
 
 	import applicationMainMethodClasses.FCMainClass;
@@ -232,9 +233,19 @@ package guiPageClasses;
 					GUISystemStartUpPage.theAdminHomePage.setup();
 			} else if (role.compareTo("Student") == 0) {
 				if (GUISystemStartUpPage.theStudentHomePage == null)
-					GUISystemStartUpPage.theStudentHomePage = new GUIStudentHomePage(thePrimaryStage, theRootPane, theDatabase, theUser);
+					try {
+						GUISystemStartUpPage.theStudentHomePage = new GUIStudentHomePage(thePrimaryStage, theRootPane, theDatabase, theUser);
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				else
-					GUISystemStartUpPage.theStudentHomePage.setup();;			
+					try {
+						GUISystemStartUpPage.theStudentHomePage.setup();
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					};			
 			} else if (role.compareTo("Reviewer") == 0) {
 				if (GUISystemStartUpPage.theReviewerHomePage == null)
 					GUISystemStartUpPage.theReviewerHomePage = new GUIReviewerHomePage(thePrimaryStage, theRootPane, theDatabase, theUser);

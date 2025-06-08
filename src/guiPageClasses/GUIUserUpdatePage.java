@@ -1,5 +1,6 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
 import java.util.Optional;
 
 import applicationMainMethodClasses.FCMainClass;
@@ -324,10 +325,20 @@ public class GUIUserUpdatePage {
 			break;
 		case 2: 
 			if (GUISystemStartUpPage.theStudentHomePage == null)
-				GUISystemStartUpPage.theStudentHomePage = 
-					new GUIStudentHomePage(thePrimaryStage, theRootPane, theDatabase, theUser);
+				try {
+					GUISystemStartUpPage.theStudentHomePage = 
+						new GUIStudentHomePage(thePrimaryStage, theRootPane, theDatabase, theUser);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			else
-				GUISystemStartUpPage.theStudentHomePage.setup();
+				try {
+					GUISystemStartUpPage.theStudentHomePage.setup();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			break;
 		case 3: 
 			if (GUISystemStartUpPage.theReviewerHomePage == null)
