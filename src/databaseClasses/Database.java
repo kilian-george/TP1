@@ -132,23 +132,25 @@ public class Database {
 	            + "role VARCHAR(10))";
 	    statement.execute(invitationCodesTable);
 	    //create the Questions table
+	    
 	    String questionsTable = "CREATE TABLE IF NOT EXISTS Questions ("
 	    	    + "id INT AUTO_INCREMENT PRIMARY KEY, "
-	    		+"isResolved BOOLEAN DEFAULT FALSE"
+	    		+"isResolved BOOLEAN DEFAULT FALSE,"
 	    	    + "username VARCHAR(255), "
 	    	    + "category VARCHAR(255), "
 	    	    + "questionText TEXT)";
 	    	statement.execute(questionsTable);
-
 	    	// Create the Answers table
 	    	String answersTable = "CREATE TABLE IF NOT EXISTS Answers ("
 	    	    + "id INT AUTO_INCREMENT PRIMARY KEY, "
 	    	    + "questionId INT, "
 	    	    +"username VARCHAR(255),"
 	    	    + "answerText TEXT, "
-	    	    + "score INt,"
+	    	    + "score INT,"
 	    	    + "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE)";
 	    	statement.execute(answersTable);
+	    	
+
 	    	String commentsTable = "CREATE TABLE IF NOT EXISTS Comments ("
 	    		+"id INT PRIMARY KEY AUTO_INCREMENT,"
 	    		+"answer_id INT,"
@@ -157,8 +159,9 @@ public class Database {
 	    		+"FOREIGN KEY (answer_id) REFERENCES Answers(id) ON DELETE CASCADE"
 	    		+")";
 	    		statement.execute(commentsTable);
-	    			
+	    	
 	}
+
 	public List<Question> getAllQuestions() {
 	    List<Question> questions = new ArrayList<>();
 
