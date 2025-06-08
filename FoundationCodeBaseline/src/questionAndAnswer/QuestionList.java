@@ -1,0 +1,40 @@
+package questionAndAnswer;
+
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class QuestionList {
+private List<Question> questions = new ArrayList<>();
+public QuestionList() {
+	this.questions = new ArrayList<>();
+}
+public QuestionList(List<Question> questions) {
+	this.questions = new ArrayList<>(questions);
+}
+
+public void addQuestion(Question input) {
+	questions.add(input);
+}
+
+public List<Question> getQuestions(){
+	return questions;
+}
+
+public List<Question> getQuestionByName(String name){
+	return questions.stream().filter(q->q.getName().equals(name)).collect(Collectors.toList());
+}
+
+public List<Question> getUnresolvedQuestions(){
+	return questions.stream().filter(q->!q.isResolved()).collect(Collectors.toList());
+}
+
+public List<Question> getResolvedQuestions(){
+	return questions.stream().filter(q->q.isResolved()).collect(Collectors.toList());
+}
+
+public void  deleteQuestion(Question question) {
+	questions.remove(question);
+}
+}
