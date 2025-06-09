@@ -320,13 +320,15 @@ public class GUIAdminHomePage {
 		numberOfInvitations = theDatabase.getNumberOfInvitations();
 		label_NumberOfInvitations.setText("Number of outstanding invitations: " + numberOfInvitations);
 	}
-
+		//In each method from "manageInvitations(){...}" to "listUser(){...}"you can delete the entire section and add the corresponding commented code
 	private void manageInvitations () {
 		System.out.println("\n*** WARNING ***: Manage Invitations Not Yet Implemented");
 		alertNotImplemented.setTitle("*** WARNING ***");
 		alertNotImplemented.setHeaderText("Manage Invitations Issue");
 		alertNotImplemented.setContentText("Manage Invitations Not Yet Implemented");
 		alertNotImplemented.showAndWait();
+		// theRootPane.getChildren().clear();
+		// new GUIManageInvitationPage(primaryStage, theRootPane, theDatabase, theUser);
 	}
 	
 	private void setOnetimePassword () {
@@ -335,6 +337,8 @@ public class GUIAdminHomePage {
 		alertNotImplemented.setHeaderText("One-Time Password Issue");
 		alertNotImplemented.setContentText("One-Time Password Not Yet Implemented");
 		alertNotImplemented.showAndWait();
+		// theRootPane.getChildren().clear();
+		// new GUISetOneTimePasswordPage(primaryStage, theRootPane, theDatabase, theUser);
 	}
 	
 	private void deleteUser() {
@@ -343,6 +347,8 @@ public class GUIAdminHomePage {
 		alertNotImplemented.setHeaderText("Delete User Issue");
 		alertNotImplemented.setContentText("Delete User Not Yet Implemented");
 		alertNotImplemented.showAndWait();
+		//theRootPane.getChildren().clear();
+		//new GUIDeleteUserPage(primaryStage, theRootPane, theDatabase, theUser);
 	}
 	
 	private void listUser() {
@@ -351,7 +357,11 @@ public class GUIAdminHomePage {
 		alertNotImplemented.setHeaderText("List User Issue");
 		alertNotImplemented.setContentText("List Users Not Yet Implemented");
 		alertNotImplemented.showAndWait();
-	}
+		// theRootPane.getChildren().clear();
+		// new GUIListUsersPage(primaryStage, theRootPane, theDatabase, theUser);
+		}
+//They were sorta similar to the GUIAddRemoveRolesPage.java class but the call method is the same, as long as you have the class name right it should work
+	
 	
 	private void addRemoveRoles() {
 		theRootPane.getChildren().clear();
