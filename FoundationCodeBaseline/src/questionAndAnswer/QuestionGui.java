@@ -303,11 +303,15 @@ public class QuestionGui {
 		listResolvedQuestionButton.setOnAction(e ->{
 			String currentUser = database.getCurrentUsername();
 			List<Question> allQ = database.getAllQuestions();
+			//this takes the questions and filters them by if they are resolved or not as well
+			//as by username and puts it into the myResolved list 
 			List<Question> myResolved = allQ.stream()
 					.filter(q -> q.isResolved() && q.getName().equals(currentUser))
 		.collect(Collectors.toList());
 			VBox resolvedQuestionBox = new VBox(10);
 			for(Question q:myResolved) {
+				//for each question in my resolved questions it makes a label to display 
+				//the text of each
 				Label qLabel = new Label(q.getQuestionText());
 			resolvedQuestionBox.getChildren().add(qLabel);
 				}
@@ -546,9 +550,7 @@ public class QuestionGui {
 				Question q = new Question(name, category, questionText, currentIndex);
 				int questionId = database.saveQuestion(q);
 				q.setId(questionId);
-				if(setViewCallback != null) {
-					setViewCallback.accept(layout);
-				}
+				showDetailView(q);
 			} else {
 				new Alert(Alert.AlertType.ERROR, "All fields must be filled.").showAndWait();
 			}
