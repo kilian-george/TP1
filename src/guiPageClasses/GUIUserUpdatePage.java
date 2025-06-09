@@ -140,6 +140,26 @@ public class GUIUserUpdatePage {
         setupLabelUI(label_Password, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 150);
         setupLabelUI(label_CurrentPassword, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 150);
         setupButtonUI(button_UpdatePassword, "Dialog", 18, 275, Pos.CENTER, 500, 143);
+	//I thought there was a section in the task that said to set an updatePassword button, but I could be wrong, so this can be ignored if anything
+		// button_UpdatePassword.setOnAction((event) -> {
+ //            result = dialogUpdatePassword.showAndWait();
+ //            result.ifPresent(password -> {
+ //                if (!PasswordEvaluator.isValid(password)) {
+ //                    showAlert("Invalid password. Password must be at least 8 characters and contain a digit.");
+ //                    return;
+ //                }
+ //                theDatabase.updatePassword(theUser.getUserName(), password);
+ //                theDatabase.getUserAccountDetails(theUser.getUserName());
+ //                String newPassword = theDatabase.getCurrentPassword();
+ //                if (newPassword == null || newPassword.length() < 1)
+ //                    label_CurrentPassword.setText("<none>");
+ //                else
+ //                    label_CurrentPassword.setText("*".repeat(newPassword.length()));
+ //                //This should show asteriks to hide the currentPassword
+ //                //I could also implement a alert to say password update
+ //               // showSuccessAlert("Password updated sucessfully.");
+ //            });
+ //        });
         
         setupLabelUI(label_FirstName, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 200);
         setupLabelUI(label_CurrentFirstName, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 200);
