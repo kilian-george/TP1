@@ -40,10 +40,29 @@ public class QuestionGui {
 	private int currentIndex = 0;
 	Database database;
 	private Consumer<Parent> setViewCallback;
+	
+	/**********
+	 * <p> Method: setOnViewSwitch </p>
+	 * 
+	 * <p> Description: Sets the view-switching callback used by this class to update the
+	 * main content area. This allows other parts of the application to replace
+	 *  the center of the window. </p>
+	 * 
+	 * @param callback A Consumer functional interface that accepts a Parent node to display
+	 */
 	public void setOnViewSwitch(Consumer<Parent> callback) {
 		this.setViewCallback = callback;
 	}
-
+	/**********
+	 * <p> Method: getView() </p>
+	 * 
+	 * <p> Description: This creates the initial view for the question
+	 * and answer sections. It creates the buttons that then activate the
+	 * helper methods. it also displays a list of questions by order of 
+	 * time</p>
+	 * @throws SQLException 
+	 * 
+	 */
 	public Parent getView(Database database) throws SQLException {
 		// Load data will have to be changed for group project
 		this.database=database;
@@ -57,15 +76,19 @@ public class QuestionGui {
 		questionsList.setItems(questions);
 		questionsList.setCellFactory(param -> new ListCell<Question>() {
 			@Override
+			//Customizes how each question is displayed 
 			protected void updateItem(Question item, boolean notHere) {
+				//if cell is empty no text is shown
 				super.updateItem(item, notHere);
 				setText((notHere || item == null) ? null : item.getQuestionText());
 			}
 		});
 		questionsList.setOnMouseClicked(event -> {
+			//when a question in the list is clicked it gets the model and item
 			if (event.getClickCount() == 2) {
 				Question selected = questionsList.getSelectionModel().getSelectedItem();
 				if (selected != null) {
+					//shows the detailed view of clicked question
 					showDetailView(selected);
 				}
 			}
@@ -73,8 +96,11 @@ public class QuestionGui {
 		// new question button
 		Button newQuestionButton = new Button("Ask New Question");
 		newQuestionButton.setOnAction(e -> showNewQuestion());
+		//resolve button creates your own resovled questions
 		HBox resolvedButtonBox = createResloveListButton();
+		//unresolved creates unresolved for your questions
 		HBox UnresolvedButtonBox = createUnresloveListButton();
+		//all unsreolved questions
 		HBox allUnresolvedButtonBox = createAllUnresolvedButton();
 		HBox topBar = new HBox(10, newQuestionButton, resolvedButtonBox, UnresolvedButtonBox, allUnresolvedButtonBox);
 		topBar.setPadding(new Insets(10));
@@ -82,12 +108,21 @@ public class QuestionGui {
 		layout.setCenter(questionsList);
 		return layout;
 	}
-
+	/**********
+	 * <p> Method: showDetailView </p>
+	 * 
+	 * <p> Description: Displays a detailed view of a specific question, including the question 
+	 * text, metadata, associated answers, and navigation controls. Allows deletion of the question 
+	 * and re-displays the main list. </p>
+	 * 
+	 * @param question The Question object to display in detail
+	 */
 	private void showDetailView(Question question) {
 		VBox detailBox = new VBox(10);
 		detailBox.setPadding(new Insets(10));
 		HBox topBox = new HBox();
 		topBox.setAlignment(Pos.TOP_RIGHT);
+		//makes the delete, createQuestion, answer,ect buttons
 		topBox.getChildren().add(createDeleteButton(question));
 		List<Node> questionLabels = createQuestionData(question);
 		VBox answersBox = createAnswersBox(question);
@@ -103,29 +138,45 @@ public class QuestionGui {
 		detailBox.getChildren().add(showUnresolvedQuestions);
 		switchView(detailBox);
 	}
-
+	/**********
+	 * <p> Method: createDeleteButton </p>
+	 * 
+	 * <p> Description: Generates a delete button for the input question. The button is only 
+	 * visible if the current user is the original author or an admin. When clicked, the 
+	 * method prompts the user to confirm, then deletes the question from the 
+	 * database and refreshes the view. </p>
+	 * 
+	 * @param question The Question object to potentially delete
+	 * @return A Button object with delete logic
+	 */
 	private Button createDeleteButton(Question question) {
 		Button deleteButton = new Button("Delete");
+		//if the username dosnt match or the user isnt an admin, the delete button is hidden for security
 		if(!database.getCurrentUsername().equals(question.getName())&&!database.getCurrentAdminRole()) {
 			deleteButton.setVisible(false);
 		}
 		deleteButton.setOnAction(e -> {
+			//creates a conformation when attempting to delete a question
 			Alert delAlert = new Alert(AlertType.CONFIRMATION, "are you sure?");
 			delAlert.setHeaderText("confirm delete");
 			delAlert.setTitle("Delete question");
+			//makes the popup with an ok button, if clicked it will 
+			//delete the question
 			Optional<ButtonType> resAlert = delAlert.showAndWait();
 			if (resAlert.isPresent() && resAlert.get() == ButtonType.OK) {
 				try {
+					//attempts to delete the question
 					database.deleteQuestion(question.getId());
+				//if not found then it it will error out
 				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
+
 					e1.printStackTrace();
 				}
-				database.saveQuestion(question);
 				try {
+					//resets the view 
 					switchView(getView(database));
 				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
+
 					e1.printStackTrace();
 				}
 			}
@@ -133,47 +184,77 @@ public class QuestionGui {
 		});
 		return deleteButton;
 	}
-
+	/**********
+	 * <p> Method: createQuestionData </p>
+	 * 
+	 * <p> Description: Generates a list of labeled UI nodes containing information about
+	 * a question. This includes the question text with timestamp, category, and the name
+	 * of the current user. </p>
+	 * 
+	 * @param question The question to display data from
+	 * @return A list of UI nodes representing the question's metadata
+	 */
 	private List<Node> createQuestionData(Question question) {
+		// makes a time stamp in the format specified
 		String questionTime = question.getTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+		//creates the label and question text with added timestamp
 		Label questionLabel = new Label("Question is: " + question.getQuestionText() + " (" + questionTime + ")");
 		questionLabel.setWrapText(true);
+		//shows the category of question
 		Label categoryLabel = new Label("Category is: " + question.getCategory());
 		questionLabel.setWrapText(true);
+		//displays username
 		Label nameLabel = new Label(database.getCurrentUsername());
 		return List.of(questionLabel, nameLabel, categoryLabel);
 	}
-
+	/**********
+	 * <p> Method: createAnswersBox </p>
+	 * 
+	 * <p> Description: Constructs a VBox containing all answers to a question.
+	 * Answers are sorted for score. Each answer has voting, resovled checkmark,
+	 * and an optional resolve action button. Comment sections per answer. </p>
+	 * 
+	 * @param question The question for which answers should be displayed
+	 * @return A VBox containing all rendered answer elements and their controls
+	 */
+	
 	private VBox createAnswersBox(Question question) {
 		VBox answersBox = new VBox(5);
 		if (question.getAnswers().isEmpty()) {
+			//checks if any answers exist
 			answersBox.getChildren().add(new Label("nobody has answered yet"));
 		}
 		else {
 			List<Answer> sortAnswers = new ArrayList<>(question.getAnswers());
+			//sorts the answers by score
 			sortAnswers.sort((a1, a2) -> {
+				//if an answer is marked as resolved then it will always be on top
 				if (a1.getResolved() != a2.getResolved()) {
+					//compares the resolve states of all answers 
 					return Boolean.compare(!a1.getResolved(), !a2.getResolved());
 				}
+				//compares the score states so that it organizes by score
 				return Integer.compare(a2.getScore(), a1.getScore());
 			});
 			
-			//boolean hideResolve = question.getAnswers().stream().anyMatch(Answer::getResolved);
 			
 			for (Answer a : sortAnswers) {
+				//for all the answers in the question, it makes comments
 				VBox commentBox = commentHelper(a, question);
+				//time stamp maker 
 				String answerTime = a.getTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 				Label answerLabel = new Label("*" + a.getName() + ":" + a.getAnswerText() + " (" + answerTime + ")");
 				answerLabel.setWrapText(true);
-				
+				//creates the labels for score
 				Label scoreLabel = new Label("score: " + a.getScore());
-				
+				//creates a green check if answer is marked resolved
 				Label resolvedLabel = new Label("\u2714");
 				resolvedLabel.setStyle("-fx-text-fill: green; -fx-font-size:20px");
 				resolvedLabel.setVisible(a.getResolved());
-				
+				//upvote and downvote
 				Button upvoteButton = new Button("\u25B2");
 				Button downvoteButton = new Button("\u25BC");
+				//if upvote clicked, it disables downvote for answer
 				upvoteButton.setOnAction(e -> {
 					a.setScore(1);
 					scoreLabel.setText("score: " + a.getScore());
@@ -181,6 +262,7 @@ public class QuestionGui {
 					downvoteButton.setDisable(true);
 					database.saveAnswer(a, question.getId());
 				});
+				//same for downvote, only one vote per user
 				downvoteButton.setOnAction(e -> {
 		            a.setScore(-1);
 		            scoreLabel.setText("score: " + a.getScore());
@@ -188,9 +270,10 @@ public class QuestionGui {
 		            downvoteButton.setDisable(true);
 		            database.saveAnswer(a, question.getId());
 		        });
-				
+				//marks the answer as having resolved the question
 				Button resolveButton = new Button("resolved question");
 				resolveButton.setOnAction(e -> {
+					//disables all other resolve buttons
 					question.setResolved(true);
 					for (Answer other : question.getAnswers()) {
 						other.setResolved(false);
@@ -207,7 +290,14 @@ public class QuestionGui {
 		}
 		return answersBox;
 	}
-	
+	/**********
+	 * <p> Method: createResloveListButton </p>
+	 * 
+	 * <p> Description: Creates a button opens a popup window displaying only 
+	 * the questions submitted by the current user that have been marked as resolved. </p>
+	 * 
+	 * @return A horizontal box containing the resolved questions button
+	 */
 	private HBox createResloveListButton() {
 		Button listResolvedQuestionButton = new Button("click for YOUR resolved questions");
 		listResolvedQuestionButton.setOnAction(e ->{
@@ -229,7 +319,14 @@ public class QuestionGui {
 		});
 		return new HBox(listResolvedQuestionButton);
 	}
-	
+	/**********
+	 * <p> Method: createUnresloveListButton </p>
+	 * 
+	 * <p> Description: Creates a button that opens a popup displaying
+	 * unresolved questions submitted by the current user. </p>
+	 * 
+	 * @return A horizontal box containing the unresolved questions button
+	 */
 	private HBox createUnresloveListButton() {
 		String currentUser = database.getCurrentUsername();
 		Button listUnesolvedQuestionButton = new Button("click for YOUR unresolved questions");
@@ -252,7 +349,15 @@ public class QuestionGui {
 		});
 		return new HBox(listUnesolvedQuestionButton);
 	}
-	
+	/**********
+	 * <p> Method: createAllUnresolvedButton </p>
+	 * 
+	 * <p> Description: Creates a button that  shows a popup containing
+	 * all unresolved questions in the database. Clicking on a question in the list
+	 * opens a detailed view of that question. </p>
+	 * 
+	 * @return A horizontal box containing the button for all unresolved questions
+	 */
 	private HBox createAllUnresolvedButton() {
 		Button unresolvedButton = new Button("view ALL unresolved questions");
 		HBox box = new HBox(unresolvedButton);
@@ -294,7 +399,16 @@ public class QuestionGui {
 		});
 		return box;
 	}
-	
+	/**********
+	 * <p> Method: createNavigationButtons </p>
+	 * 
+	 * <p> Description: Creates the navigation buttons for the detailed view of a question.
+	 * Includes Add Answer button that opens an answer form, back button that returns to the 
+	 * main question list view. </p>
+	 * 
+	 * @param question The current question being viewed
+	 * @return An HBox containing the Add Answer and Back buttons
+	 */
 	private HBox createNavigationButtons(Question question) {
 		Button addAnswerButton = new Button("Add Answer");
 		addAnswerButton.setOnAction(e -> showaddAnswer(question));
@@ -312,7 +426,17 @@ public class QuestionGui {
 		return navBox;
 
 	}
-
+	/**********
+	 * <p> Method: commentHelper </p>
+	 * 
+	 * <p> Description: Constructs a comment section UI for a given answer. Displays existing
+	 * comments with timestamps and provides text field,  button for user to add a new comment, 
+	 * which is then saved and the view is reset. </p>
+	 * 
+	 * @param answer The answer to comment
+	 * @param question The question containing the answer
+	 * @return A VBox representing the full comment interface for the given answer
+	 */
 	private VBox commentHelper(Answer answer, Question question) {
 		VBox commentBox = new VBox(5);
 		for (Comment comment : answer.getComments()) {
@@ -335,10 +459,16 @@ public class QuestionGui {
 		commentArea.setPadding(new Insets(5, 0, 10, 20));
 		return commentArea;
 	}
-
+	/**********
+	 * <p> Method: showaddAnswer </p>
+	 * 
+	 * <p> Description: Displays  new answer to a given question. Includes the question 
+	 * text, input area for the answer, and submit/cancel buttons.After submission, 
+	 * the question view is refreshed to show the newly added answer. </p>
+	 * 
+	 * @param current The question to which the new answer will be added
+	 */
 	private void showaddAnswer(Question current) {
-
-		
 		VBox answersBox = new VBox(10);
 		// setting up naming area
 		Label nameLabel = new Label(database.getCurrentUsername());
@@ -365,7 +495,17 @@ public class QuestionGui {
 		answersBox.getChildren().add(inputBox);
 		switchView(answersBox);
 	}
-
+	/**********
+	 * <p> Method: addAnswer </p>
+	 * 
+	 * <p> Description: Validates and adds a new answer to cur question. If either
+	 * the name or answer text is missing, an error alert is shown. Otherwise, the answer
+	 * is added and saved in the database. </p>
+	 * 
+	 * @param current The question the answer belongs to
+	 * @param name The name of the user submitting the answer
+	 * @param answerText text of the answer
+	 */
 	private void addAnswer(Question current, String name, String answerText) {
 		if (name != null && !name.isEmpty() && answerText != null && !answerText.isEmpty()) {
 			Answer ans = new Answer(name, answerText, 0);
@@ -376,7 +516,14 @@ public class QuestionGui {
 			alert.showAndWait();
 		}
 	}
-
+	/**********
+	 * <p> Method: showNewQuestion </p>
+	 * 
+	 * <p> Description: displays view for user to submit a new question. Includes
+	 * category selection, text box for question entry, and live suggestions for
+	 * similar questions. On submission, the question is saved to the database and the view
+	 * is updated. </p>
+	 */
 	private void showNewQuestion() {
 		ComboBox<String> questionBox = questionComboBox(database.getAllQuestions(),
 				matchedQuestion -> showDetailView(matchedQuestion));
@@ -422,7 +569,17 @@ public class QuestionGui {
 
 		switchView(layout); // Trigger the view update via the callback
 	}
-
+	/**********
+	 * <p> Method: questionComboBox </p>
+	 * 
+	 * <p> Description: Creates ComboBox that allows the user to enter a new
+	 * question while showing suggestions for existing similar questions.
+	 * Selecting an existing question will trigger a callback to display details. </p>
+	 * 
+	 * @param existingQuestions A list of existing questions to compare against
+	 * @param onQuestionSelected Callback function to run when a match is selected
+	 * @return A configured ComboBox with live search and selection behavior
+	 */
 	private ComboBox<String> questionComboBox(List<Question> existingQuestions, Consumer<Question> onQuestionSelected) {
 		ComboBox<String> questionBox = new ComboBox<>();
 		questionBox.setEditable(true);
@@ -467,7 +624,15 @@ public class QuestionGui {
 
 		return questionBox;
 	}
-
+	/**********
+	 * <p> Method: buildMainView </p>
+	 * 
+	 * <p> Description: Builds the primary view that shows the list of all questions.
+	 * Button to ask a new question,  a button to filter resolved questions.
+	 * Clicking a question in the list shows its detailed view. </p>
+	 * 
+	 * @return The main UI component for the question list
+	 */
 	private Parent buildMainView() {
 		BorderPane layout = new BorderPane();
 		layout.setPadding(new Insets(20));
@@ -501,7 +666,14 @@ public class QuestionGui {
 
 		return layout;
 	}
-	
+	/**********
+	 * <p> Method: switchView </p>
+	 * 
+	 * <p> Description: Replaces the currently displayed view with a new one using the
+	 * view-switching callback if it's available. </p>
+	 * 
+	 * @param newView The new JavaFX Parent node to display
+	 */
 	private void switchView(Parent newView) {
 		if(setViewCallback !=null) {
 			setViewCallback.accept(newView);
