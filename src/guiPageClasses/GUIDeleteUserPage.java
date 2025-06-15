@@ -51,6 +51,7 @@ public class GUIDeleteUserPage {
 
     public void setup() {
         theRootPane.getChildren().clear();
+        //If there is still issues popping up with the user deletion, I will add a function here later that may help 
         theRootPane.getChildren().addAll(label_PageTitle, label_Username, textField_Username, button_Delete, button_Back);
     }
 
@@ -66,10 +67,17 @@ public class GUIDeleteUserPage {
         confirm.showAndWait();
 
         if (confirm.getResult() == ButtonType.YES) {
+            // Deletes user from the database
+            boolean success = theDatabase.deleteUserByUsername(username); // Needed to make sure that this existed
 
-            // Show that we have deleted a user 
-            showAlert("Success", "User '" + username + "' has been deleted.");
-            textField_Username.clear();
+            if (success) {
+                showAlert("Success", "User '" + username + "' has been deleted.");
+                textField_Username.clear();
+                
+                //This should keep the user list up-to-date
+            } else {
+                showAlert("Error", "User '" + username + "' could not be deleted.");
+            }
         }
     }
 
