@@ -37,7 +37,7 @@ public class GUIManageInvitationPage {
 
         
         button_Back.setLayoutX(20);
-        button_Back.setLayoutY(100);
+        button_Back.setLayoutY(271);
         button_Back.setOnAction((event) -> { performBack(); });
 
         setup();
@@ -45,7 +45,7 @@ public class GUIManageInvitationPage {
 
     public void setup() {
         theRootPane.getChildren().clear();
-        theRootPane.getChildren().addAll(label_PageTitle, button_Back);
+        theRootPane.getChildren().addAll(label_PageTitle, listView_Invitations, button_Back);
     }
 
     private void performBack() {
