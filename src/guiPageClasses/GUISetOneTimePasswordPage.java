@@ -52,7 +52,7 @@ public class GUISetOneTimePasswordPage {
 
     public void setup() {
         theRootPane.getChildren().clear();
-        theRootPane.getChildren().addAll(label_PageTitle, button_Back);
+        theRootPane.getChildren().addAll(label_PageTitle, label_Username, textField_Username, button_SetOTP, button_Back);
     }
     
     private void setOTP() {
