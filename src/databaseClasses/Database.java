@@ -312,47 +312,49 @@ public class Database {
 	
 //The following codes were the codes that I try to make to implement the "manage invitation " button GUI page.
 	
-	// public boolean invitationCodeExists(String code, String email, String role) {
-	//     String query = "SELECT COUNT(*) AS count FROM InvitationCodes WHERE code = ? AND emailAddress = ? AND role = ?";
-	//     try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-	//         pstmt.setString(1, code);
-	//         pstmt.setString(2, email);
-	//         pstmt.setString(3, role);
-	//         ResultSet rs = pstmt.executeQuery();
-	//         if (rs.next()) {
-	//             return rs.getInt("count") > 0;
-	//         }
-	//     } catch (SQLException e) {
-	//         e.printStackTrace();
-	//     }
-	//     return false;
-	// }
+	//This public method is good to go to implement for the GUIManageInvitationpage.java *Lines 317-357*
+ 
+	public boolean invitationCodeExists(String code, String email, String role) {
+	    String query = "SELECT COUNT(*) AS count FROM InvitationCodes WHERE code = ? AND emailAddress = ? AND role = ?";
+	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	        pstmt.setString(1, code);
+	        pstmt.setString(2, email);
+	        pstmt.setString(3, role);
+	        ResultSet rs = pstmt.executeQuery();
+	        if (rs.next()) {
+	            return rs.getInt("count") > 0;
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return false;
+	}
 
-	// //Adding a code to get the invitation list to hopefully display the list of invitations from using the project
-	// /*******
-	//  * <p> Method: getInvitationList </p>
-	//  * 
-	//  * <p> Description: Returns a list of invitation codes with their corresponding email addresses and roles. </p>
-	//  * 
-	//  * @return a list of invitation details as formatted strings.
-	//  * 
-	//  */
-	// public List<String> getInvitationList() {
-	//     List<String> invitationList = new ArrayList<>();
-	//     String query = "SELECT emailAddress, code, role FROM InvitationCodes";
-	//     try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-	//         ResultSet rs = pstmt.executeQuery();
-	//         while (rs.next()) {
-	//             String email = rs.getString("emailAddress");
-	//             String code = rs.getString("code");
-	//             String role = rs.getString("role");
-	//             invitationList.add(email + " - Code: " + code + " - Role: " + role);
-	//         }
-	//     } catch (SQLException e) {
-	//         e.printStackTrace();
-	//     }
-	//     return invitationList;
-	// }
+	//Adding a code to get the invitation list to hopefully display the list of invitations from using the project
+	/*******
+	 * <p> Method: getInvitationList </p>
+	 * 
+	 * <p> Description: Returns a list of invitation codes with their corresponding email addresses and roles. </p>
+	 * 
+	 * @return a list of invitation details as formatted strings.
+	 * 
+	 */
+	public List<String> getInvitationList() {
+	    List<String> invitationList = new ArrayList<>();
+	    String query = "SELECT emailAddress, code, role FROM InvitationCodes";
+	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	        ResultSet rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	            String email = rs.getString("emailAddress");
+	            String code = rs.getString("code");
+	            String role = rs.getString("role");
+	            invitationList.add(email + " - Code: " + code + " - Role: " + role);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return invitationList;
+	}
 
 /*******
  * <p> Method: getNumberOfUsers </p>
@@ -420,7 +422,7 @@ public class Database {
 		} catch (SQLException e) {
 	        return null;
 	    }
-//		System.out.println(userList);
+		System.out.println(userList);
 		//I uncommented this line of code in order to get the GUIListUserPage.java to display the list of users implemented in the database of the foundation code
 		return userList;
 	}
@@ -629,15 +631,17 @@ public class Database {
 	public String generateInvitationCode(String emailAddress, String role) {
 		String code = UUID.randomUUID().toString().substring(0, 6); // Generate a random 6-character code
 		//Here is where I add some code to satisfy Admin Story 1:
-		// LocalDateTime deadline = LocalDateTime.now().plusHours(24);
-	 	//Timestamp deadlineTimestamp = Timestamp.valueOf(deadline);
+		 LocalDateTime deadline = LocalDateTime.now().plusHours(24);
+	 	Timestamp deadlineTimestamp = Timestamp.valueOf(deadline);
+		
 		String query = "INSERT INTO InvitationCodes (code, emailaddress, role, deadline) VALUES (?, ?, ?, ?)";
 		//To make sure that the query implements the deadline pstmt, where gonna add "deadline" and another "?" 
-	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	    
+		try (PreparedStatement pstmt = connection.prepareStatement(query)) {
 	        pstmt.setString(1, code);
 	        pstmt.setString(2, emailAddress);
 	        pstmt.setString(3, role);
-		    //pstmt.setTimestamp(4, deadlineTimestamp);
+		pstmt.setTimestamp(4, deadlineTimestamp);
 	        pstmt.executeUpdate();
 	    } catch (SQLException e) {
 	        e.printStackTrace();
@@ -648,70 +652,70 @@ public class Database {
 
 //The next set of codes were implemented to satisfy the 3rd-4th Admin stories
 	
-	// //Admin Story 2: Adding methods to set a OTP for the user, check the OTP for validation, and an expiration
-	// public boolean setOneTimePassword(String username, String otp) {
- //        String query = "UPDATE userDB SET oneTimePassword = ? WHERE username = ?";
- //        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
- //            pstmt.setString(1, otp);
- //            pstmt.setString(2, username);
- //            int affectedRows = pstmt.executeUpdate();
- //            return affectedRows > 0;
- //        } catch (SQLException e) {
- //            e.printStackTrace();
- //            return false;
- //        }
- //    }
+	//Admin Story 2: Adding methods to set a OTP for the user, check the OTP for validation, and an expiration
+	public boolean setOneTimePassword(String username, String otp) {
+        String query = "UPDATE userDB SET oneTimePassword = ? WHERE username = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, otp);
+            pstmt.setString(2, username);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
  //    // Check one-time password and expire it
- //    public boolean checkOneTimePassword(String username, String otp) {
- //        String query = "SELECT oneTimePassword FROM userDB WHERE username = ?";
- //        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
- //            pstmt.setString(1, username);
- //            ResultSet rs = pstmt.executeQuery();
- //            if (rs.next()) {
- //                String storedOtp = rs.getString("oneTimePassword");
- //                if (storedOtp != null && storedOtp.equals(otp)) {
- //                    expireOneTimePassword(username);
- //                    return true;
- //                }
- //            }
- //        } catch (SQLException e) {
- //            e.printStackTrace();
- //        }
- //        return false;
- //    }
+    public boolean checkOneTimePassword(String username, String otp) {
+        String query = "SELECT oneTimePassword FROM userDB WHERE username = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                String storedOtp = rs.getString("oneTimePassword");
+                if (storedOtp != null && storedOtp.equals(otp)) {
+                    expireOneTimePassword(username);
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
- //    // Expire one-time password (set it to NULL)
- //    public boolean expireOneTimePassword(String username) {
- //        String query = "UPDATE userDB SET oneTimePassword = NULL WHERE username = ?";
- //        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
- //            pstmt.setString(1, username);
- //            int affectedRows = pstmt.executeUpdate();
- //            return affectedRows > 0;
- //        } catch (SQLException e) {
- //            e.printStackTrace();
- //            return false;
- //        }
- //    }
+    // Expire one-time password (set it to NULL)
+    public boolean expireOneTimePassword(String username) {
+        String query = "UPDATE userDB SET oneTimePassword = NULL WHERE username = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, username);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     
 
     
 	
-	// //Admin Story 3: Setting a method to delete a user
- // // Delete user
- //    public boolean deleteUser(String username) {
- //        String query = "DELETE FROM userDB WHERE username = ?";
- //        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
- //            pstmt.setString(1, username);
- //            int affectedRows = pstmt.executeUpdate();
- //            return affectedRows > 0;
- //        } catch (SQLException e) {
- //            e.printStackTrace();
- //            return false;
-//		//
- //        }
- //    }
+	//Admin Story 3: Setting a method to delete a user
+ // Delete user
+	//Updated the list to verify that user is deleted
+     public boolean deleteUserByUsername(String username) {
+        String query = "DELETE FROM userDB WHERE userName = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, username);
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 	
 	/*******
 	 * <p> Method: int getNumberOfInvitations() </p>
@@ -1145,21 +1149,21 @@ public class Database {
 	}
 
 	//The next set of comment will help implement the Admin story 4 
-	// //Admin Story 4 that will List and update user accounts
-	//  // Get all usernames
-	//     public List<String> getAllUsernames() {
-	//         List<String> usernames = new ArrayList<>();
-	//         String query = "SELECT username FROM userDB";
-	//         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-	//             ResultSet rs = pstmt.executeQuery();
-	//             while (rs.next()) {
-	//                 usernames.add(rs.getString("username"));
-	//             }
-	//         } catch (SQLException e) {
-	//             e.printStackTrace();
-	//         }
-	//         return usernames;
-	//     }
+	//Admin Story 4 that will List and update user accounts
+	 // Get all usernames
+	    public List<String> getAllUsernames() {
+	        List<String> usernames = new ArrayList<>();
+	        String query = "SELECT username FROM userDB";
+	        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	            ResultSet rs = pstmt.executeQuery();
+	            while (rs.next()) {
+	                usernames.add(rs.getString("username"));
+	            }
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	        return usernames;
+	    }
 	
 	
 	/*******
@@ -1416,6 +1420,46 @@ public class Database {
 		resultSet.close();
 	}
 
+	//The following two methods will help verify that the admin story 1 works for the code invitations, will verify if there are any codes available in  the db
+	//
+	/*******
+	 * <p>Method: void createInvitationCodesTable() </p>
+	 * 
+	 * <p> Description: This will create a InvitationCodes table if it doesn't already exist. </p>
+	 * 
+	 */
+	
+	public void createInvitationCodesTable() {
+		 String createTableSQL = "CREATE TABLE IF NOT EXISTS InvitationCodes ("
+		            + "code TEXT PRIMARY KEY, "
+		            + "emailaddress TEXT NOT NULL, "
+		            + "role TEXT NOT NULL, "
+		            + "deadline TIMESTAMP NOT NULL"
+		            + ")";
+
+		    try (Statement stmt = connection.createStatement()) {
+		        stmt.execute(createTableSQL);
+
+		        //Adding this to validate if the Invitation codes exist and are set in a table
+		        System.out.println("[Database] ✅ InvitationCodes table created (or already exists).");
+
+		    } catch (SQLException e) {
+			    //Sends an error message if the database was not able to create the InvitationCodes table
+		        System.err.println("[Database] ❌ Error creating InvitationCodes table.");
+		        e.printStackTrace();
+		    }
+		}
+	public void updateInvitationCodesTable() {
+	    String alterTableSQL = "ALTER TABLE InvitationCodes ADD COLUMN deadline TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP";
+
+	    try (Statement stmt = connection.createStatement()) {
+	        stmt.execute(alterTableSQL);
+	        System.out.println("[Database] ✅ InvitationCodes table updated with deadline column.");
+	    } catch (SQLException e) {
+	        System.out.println("[Database] ⚠️ InvitationCodes table already has deadline column or error occurred.");
+	        //This will verify if the database gives an error bc there is already a table made that cannot be erased so easily
+	    }
+	}
 
 	/*******
 	 * <p> Method: void closeConnection()</p>
