@@ -51,9 +51,20 @@ public class GUIListUsersPage {
 
     public void setup() {
         theRootPane.getChildren().clear();
+        refreshUserList();
         theRootPane.getChildren().addAll(label_PageTitle, listView_Users, button_Back);
     }
-
+    
+    //Adding a refresh list method that will refresh the User list in case a user is deleted
+    private void refreshUserList() {
+        listView_Users.getItems().clear();
+        List<String> usersFromDatabase = theDatabase.getUserList();
+        if (usersFromDatabase != null) {
+            listView_Users.getItems().addAll(usersFromDatabase);
+        } else {
+            listView_Users.getItems().add("Error retrieving user list from database.");
+        }
+    }
     private void performBack() {
         GUISystemStartUpPage.theAdminHomePage.setup();
     }
