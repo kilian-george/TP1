@@ -6,14 +6,9 @@ public class Comment{
 
 private String text;
 private LocalDateTime timestamp;
-private String name;
-public Comment(String name, String text) {
-	this.name= name;
+public Comment(String text) {
 	this.text = text;
 	this.timestamp = LocalDateTime.now();
-}
-public String getName() {
-	return name;
 }
 	public String getText() {
 		return text;

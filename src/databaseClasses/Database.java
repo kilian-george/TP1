@@ -144,42 +144,21 @@ public class Database {
 		statement.execute(invitationCodesTable);
 		// create the Questions table
 
-		String questionsTable = "CREATE TABLE IF NOT EXISTS Questions ("
-				+ "id INT AUTO_INCREMENT PRIMARY KEY, "
-				+ "isResolved BOOLEAN DEFAULT FALSE,"
-				+ "username VARCHAR(255), "
-				+ "category VARCHAR(255), "
+		String questionsTable = "CREATE TABLE IF NOT EXISTS Questions (" + "id INT AUTO_INCREMENT PRIMARY KEY, "
+				+ "isResolved BOOLEAN DEFAULT FALSE," + "username VARCHAR(255), " + "category VARCHAR(255), "
 				+ "questionText TEXT)";
 		statement.execute(questionsTable);
 		// Create the Answers table
-		String answersTable = "CREATE TABLE IF NOT EXISTS Answers ("
-		        + "id INT AUTO_INCREMENT PRIMARY KEY, "
-		        + "questionId INT, "
-		        + "username VARCHAR(255), "
-		        + "answerText TEXT, "
-		        + "score INT DEFAULT 0, "
-		        + "resolved BOOLEAN DEFAULT FALSE, "
-		        + "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE)";
+		String answersTable = "CREATE TABLE IF NOT EXISTS Answers (" + "id INT AUTO_INCREMENT PRIMARY KEY, "
+				+ "questionId INT, " + "username VARCHAR(255)," + "answerText TEXT, " + "score INT,"
+				+ "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE)";
 		statement.execute(answersTable);
 
 		// cretes comments table
-		String commentsTable = "CREATE TABLE IF NOT EXISTS Comments ("
-				+ "id INT PRIMARY KEY AUTO_INCREMENT,"
-				+ "answer_id INT,"
-				+"username VARCHAR(100),"
-				+ "text TEXT,"
+		String commentsTable = "CREATE TABLE IF NOT EXISTS Comments (" + "id INT PRIMARY KEY AUTO_INCREMENT,"
+				+ "answer_id INT," + "text TEXT," + "timestamp TEXT,"
 				+ "FOREIGN KEY (answer_id) REFERENCES Answers(id) ON DELETE CASCADE" + ")";
 		statement.execute(commentsTable);
-		
-		String votesTable = "CREATE TABLE IF NOT EXISTS Votes("+
-			    "id INT AUTO_INCREMENT PRIMARY KEY, "
-			    +"username VARCHAR(255), "
-			    +"answerId INT, "
-			    +"vote INT, "
-			    +"UNIQUE (username, answerId), "
-			    +"FOREIGN KEY (answerId) REFERENCES Answers(id) ON DELETE CASCADE "
-			    +")";
-			statement.execute(votesTable);
 
 	}
 
@@ -211,41 +190,16 @@ public class Database {
 				Question q = new Question(username, category, questionText, id);
 				q.setId(id);
 				q.setResolved(isResolved);
-				 List<Answer> answers = getAnswersForQuestion(id);
-				 q.setAnswers(answers);
+				q.setAnswers(getAnswersForQuestion(id));
+
 				questions.add(q);
-				
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return questions;
 	}
-	
-	
-	
-	public List<Answer> getAnswersForQuestion(int questionId) {		
-	    List<Answer> answers = new ArrayList<>();
-	    String query = "SELECT * FROM Answers WHERE questionId = ?";
-	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-	        pstmt.setInt(1, questionId);
-	        ResultSet rs = pstmt.executeQuery();
-	        while (rs.next()) {
-	            int id = rs.getInt("id");
-	            String username = rs.getString("username");
-	            String answerText = rs.getString("answerText");
-	            int score = rs.getInt("score");
-	            boolean resolved = rs.getBoolean("resolved");
 
-	            Answer a = new Answer( username, answerText, score, resolved);
-	            a.setId(id);
-	            answers.add(a);
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	    return answers;
-	}
 	/*******
 	 * <p>
 	 * Method: getAnswersForQuestion
@@ -259,70 +213,24 @@ public class Database {
 	 * @param questionId the ID of the question.
 	 * @return a list of {@link Answer} objects.
 	 */
-	
-	
-	public void saveNewAnswer(Answer answer, int questionId) {
-		String insert = "INSERT INTO Answers (questionId, username, answerText) VALUES (?, ?, ?)";
-		try (PreparedStatement pstmt = connection.prepareStatement(insert)) {
+	private List<Answer> getAnswersForQuestion(int questionId) {
+		List<Answer> answers = new ArrayList<>();
+		String query = "SELECT * FROM Answers WHERE questionId = ?";
+		try (PreparedStatement pstmt = connection.prepareStatement(query)) {
 			pstmt.setInt(1, questionId);
-			pstmt.setString(2, answer.getName());
-			pstmt.setString(3, answer.getAnswerText());
-			pstmt.executeUpdate();
-			ResultSet rs = pstmt.getGeneratedKeys();
-			if(rs.next()) {
-				answer.setId(rs.getInt(1));
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				String username = rs.getString("username");
+				String answerText = rs.getString("answerText");
+				int score = rs.getInt("score");
+				answers.add(new Answer(username, answerText, score));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		return answers;
 	}
 
-	public void deleteAnswer(int answer) throws SQLException {
-		String delete = "DELETE FROM Answers WHERE id = ?";
-		try(PreparedStatement pstmt = connection.prepareStatement(delete)){
-			pstmt.setInt(1, answer);
-			pstmt.executeUpdate();
-		}
-	}
-	
-	public int getUserVote(String username, int answerId) {
-	    String query = "SELECT vote FROM Votes WHERE username = ? AND answerId = ?";
-	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-	        pstmt.setString(1, username);
-	        pstmt.setInt(2, answerId);
-	        ResultSet rs = pstmt.executeQuery();
-	        if (rs.next()) {
-	            return rs.getInt("vote"); 
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	    return 0; 
-	}
-	
-	public void saveUserVote(String username, int answerId, int voteValue) {
-		 String update = "UPDATE Votes SET vote = ? WHERE username = ? AND answerId = ?";
-		    String insert = "INSERT INTO Votes (username, answerId, vote) VALUES (?, ?, ?)";
-
-		    try (PreparedStatement updateStmt = connection.prepareStatement(update)) {
-		        updateStmt.setInt(1, voteValue);
-		        updateStmt.setString(2, username);
-		        updateStmt.setInt(3, answerId);
-
-		        int rowsAffected = updateStmt.executeUpdate();
-		        if (rowsAffected == 0) {
-		            try (PreparedStatement insertStmt = connection.prepareStatement(insert)) {
-		                insertStmt.setString(1, username);
-		                insertStmt.setInt(2, answerId);
-		                insertStmt.setInt(3, voteValue);
-		                insertStmt.executeUpdate();
-		            }
-		        }
-		    } catch (SQLException e) {
-		        e.printStackTrace();
-		    }
-	}
-	
 	/*******
 	 * <p>
 	 * Method: saveQuestion
@@ -354,18 +262,7 @@ public class Database {
 		}
 		return -1;
 	}
-	public void updateQuestion(Question question) {
-		String update = "UPDATE Questions SET questionText = ?, category = ?, isResolved = ? WHERE id = ?";
-	    try (PreparedStatement pstmt = connection.prepareStatement(update)) {
-	        pstmt.setString(1, question.getQuestionText());
-	        pstmt.setString(2, question.getCategory());
-	        pstmt.setBoolean(3, question.isResolved());
-	        pstmt.setInt(4, question.getId());
-	        pstmt.executeUpdate();
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	}
+
 	/*******
 	 * <p>
 	 * Method: deleteQuestion
@@ -405,12 +302,12 @@ public class Database {
 	 * @param answer     the {@link Answer} object to save.
 	 * @param questionId the ID of the question the answer is associated with.
 	 */
-	public void updateAnswer(Answer answer, int questionId) {
-		String insert = "UPDATE Answers SET score= ?, answerText= ? where id =?";
+	public void saveAnswer(Answer answer, int questionId) {
+		String insert = "INSERT INTO Answers (questionId, username, answerText) VALUES (?, ?, ?)";
 		try (PreparedStatement pstmt = connection.prepareStatement(insert)) {
-			pstmt.setInt(1, answer.getScore());
-			pstmt.setString(2, answer.getAnswerText());
-			pstmt.setLong(3, answer.getId());
+			pstmt.setInt(1, questionId);
+			pstmt.setString(2, answer.getName());
+			pstmt.setString(3, answer.getAnswerText());
 			pstmt.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -430,12 +327,12 @@ public class Database {
 	 * @param comment  the {@link Comment} object to save.
 	 */
 	public void saveComment(int answerId, Comment comment) {
-		String insert = "INSERT INTO Comments (answer_id,username, text) VALUES (?,?, ?)";
+		String insert = "INSERT INTO Comments (answer_id, text, timestamp) VALUES (?, ?, ?)";
 		try (PreparedStatement pstmt = connection.prepareStatement(insert)) {
 
 			pstmt.setInt(1, answerId);
-			pstmt.setString(2, comment.getName());
-			pstmt.setString(3, comment.getText());
+			pstmt.setString(2, comment.getText());
+			pstmt.setString(3, comment.gettimestamp().toString()); // ISO format is safe
 			pstmt.executeUpdate();
 
 		} catch (SQLException e) {
@@ -455,7 +352,6 @@ public class Database {
 	 * @param answerId the ID of the answer.
 	 * @return a list of {@link Comment} objects associated with the answer.
 	 */
-	
 	public List<Comment> getCommentsByAnswerId(int answerId) {
 		List<Comment> comments = new ArrayList<>();
 		String query = "SELECT text, timestamp FROM Comments WHERE answer_id = ? ORDER BY id";
@@ -464,10 +360,10 @@ public class Database {
 
 			pstmt.setInt(1, answerId);
 			ResultSet rs = pstmt.executeQuery();
+
 			while (rs.next()) {
-				String username = rs.getString("username");
 				String text = rs.getString("text");
-				comments.add(new Comment(username, text));
+				comments.add(new Comment(text));
 			}
 
 		} catch (SQLException e) {

@@ -171,11 +171,6 @@ public class Question implements Serializable {
 		return questionAsked;
 	}
 
-	public void setQuestionText(String question) {
-		questionAsked=question;
-	}
-	
-	
 	/*******
 	 * <p>
 	 * Method: getName

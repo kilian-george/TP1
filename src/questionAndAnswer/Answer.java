@@ -17,7 +17,6 @@ import java.util.List;
  */
 public class Answer {
 	private String name;
-	private int id;
 	private String answerText;
 	private boolean resolved = false;
 	private int score = 0;
@@ -38,9 +37,8 @@ public class Answer {
 	 * @param answerText the content of the answer.
 	 * @param score      the initial score of the answer.
 	 */
-	public Answer( String name, String answerText, int score, boolean resolved) {
+	public Answer(String name, String answerText, int score) {
 		this.name = name;
-		this.resolved=resolved;
 		this.answerText = answerText;
 		this.score = score;
 	}
@@ -151,12 +149,7 @@ public class Answer {
 	public String getName() {
 		return name;
 	}
-public int getId() {
-	return id;
-}
-public void setId(int id) {
-	this.id = id;
-}
+
 	/*******
 	 * <p>
 	 * Method: getAnswerText
@@ -171,9 +164,7 @@ public void setId(int id) {
 	public String getAnswerText() {
 		return answerText;
 	}
-	public void setAnswerText(String ans) {
-		answerText = ans;
-	}
+
 	/*******
 	 * <p>
 	 * Method: toString

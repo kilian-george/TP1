@@ -10,13 +10,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javafx.beans.property.StringProperty;
-import javafx.beans.property.SimpleStringProperty;
+
 import databaseClasses.Database;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -26,23 +24,23 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Popup;
 import javafx.stage.Stage;
 
 public class QuestionGui {
 	private int currentIndex = 0;
 	Database database;
 	private Consumer<Parent> setViewCallback;
+
 	/**********
 	 * <p>
 	 * Method: setOnViewSwitch
@@ -76,58 +74,50 @@ public class QuestionGui {
 	 * 
 	 */
 	public Parent getView(Database database) throws SQLException {
-		 this.database = database;
-
-		    // Create the ListView to show questions
-		    ListView<Question> questionsList = new ListView<>();
-		    ObservableList<Question> questions = FXCollections.observableArrayList(database.getAllQuestions());
-		    questionsList.setItems(questions);
-		    questionsList.setCellFactory(param -> new ListCell<Question>() {
-		        @Override
-		        protected void updateItem(Question item, boolean notHere) {
-		            super.updateItem(item, notHere);
-		            setText((notHere || item == null) ? null : item.getQuestionText());
-		        }
-		    });
-
-		    questionsList.setOnMouseClicked(event -> {
-		        if (event.getClickCount() == 2) {
-		            Question selected = questionsList.getSelectionModel().getSelectedItem();
-		            if (selected != null) {
-		                showDetailView(selected); 
-		            }
-		        }
-		    });
-
-		    // Create buttons and controls for the top area
-		    Button newQuestionButton = new Button("Ask New Question");
-		    newQuestionButton.setOnAction(e -> showNewQuestion());
-
-		    HBox resolvedButtonBox = createResloveListButton();
-		    HBox UnresolvedButtonBox = createUnresloveListButton();
-		    HBox allUnresolvedButtonBox = createAllUnresolvedButton();
-
-		    HBox topBar = new HBox(10, newQuestionButton, resolvedButtonBox, UnresolvedButtonBox, allUnresolvedButtonBox);
-		    topBar.setPadding(new Insets(10));
-
-		    // Create main content container
-		    VBox fullContent = new VBox(10);
-		    fullContent.setPadding(new Insets(10));
-		    fullContent.getChildren().addAll(topBar, questionsList);
-
-		    
-		    // Wrap in ScrollPane
-		    ScrollPane scrollPane = new ScrollPane(fullContent);
-		    scrollPane.setFitToWidth(true);
-		    scrollPane.setFitToHeight(true);
-		    scrollPane.setPannable(true);
-		    scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-		    scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-		    scrollPane.setPrefViewportHeight(500);
-		    scrollPane.setPrefViewportWidth(700);
-
-		    return scrollPane;
-		}
+		// Load data will have to be changed for group project
+		this.database = database;
+		// Layout
+		BorderPane layout = new BorderPane();
+		layout.setPadding(new Insets(20));
+		layout.setMaxHeight(400);
+		// make the list of questions into a single viewer
+		ListView<Question> questionsList = new ListView<>();
+		ObservableList<Question> questions = FXCollections.observableArrayList(database.getAllQuestions());
+		questionsList.setItems(questions);
+		questionsList.setCellFactory(param -> new ListCell<Question>() {
+			@Override
+			// Customizes how each question is displayed
+			protected void updateItem(Question item, boolean notHere) {
+				// if cell is empty no text is shown
+				super.updateItem(item, notHere);
+				setText((notHere || item == null) ? null : item.getQuestionText());
+			}
+		});
+		questionsList.setOnMouseClicked(event -> {
+			// when a question in the list is clicked it gets the model and item
+			if (event.getClickCount() == 2) {
+				Question selected = questionsList.getSelectionModel().getSelectedItem();
+				if (selected != null) {
+					// shows the detailed view of clicked question
+					showDetailView(selected);
+				}
+			}
+		});
+		// new question button
+		Button newQuestionButton = new Button("Ask New Question");
+		newQuestionButton.setOnAction(e -> showNewQuestion());
+		// resolve button creates your own resovled questions
+		HBox resolvedButtonBox = createResloveListButton();
+		// unresolved creates unresolved for your questions
+		HBox UnresolvedButtonBox = createUnresloveListButton();
+		// all unsreolved questions
+		HBox allUnresolvedButtonBox = createAllUnresolvedButton();
+		HBox topBar = new HBox(10, newQuestionButton, resolvedButtonBox, UnresolvedButtonBox, allUnresolvedButtonBox);
+		topBar.setPadding(new Insets(10));
+		layout.setTop(topBar);
+		layout.setCenter(questionsList);
+		return layout;
+	}
 
 	/**********
 	 * <p>
@@ -149,8 +139,6 @@ public class QuestionGui {
 		topBox.setAlignment(Pos.TOP_RIGHT);
 		// makes the delete, createQuestion, answer,ect buttons
 		topBox.getChildren().add(createDeleteButton(question));
-		topBox.setPadding(new Insets(10));
-		topBox.getChildren().add(createEditQuestionButton(question));
 		List<Node> questionLabels = createQuestionData(question);
 		VBox answersBox = createAnswersBox(question);
 		HBox navigationButtons = createNavigationButtons(question);
@@ -217,36 +205,7 @@ public class QuestionGui {
 		});
 		return deleteButton;
 	}
-	private Button createEditQuestionButton(Question question) {
-		Button editButton = new Button("Edit answer");
-		if(!question.getName().equals(database.getCurrentUsername())) {
-			editButton.setVisible(false);
-		}
-		editButton.setOnAction(e ->{
-			TextArea editArea = new TextArea(question.getQuestionText());
-			Button saveButton = new Button("Save edit");
-			VBox editBox = new VBox(5, editArea, saveButton);
-			saveButton.setOnAction(ev -> {
-			    String newText = editArea.getText().trim();
 
-			    if (newText.isEmpty()) {
-			        try {
-			            database.deleteQuestion(question.getId()); 
-			           switchView(getView(database));         
-			        } catch (SQLException ex) {
-			            ex.printStackTrace();
-			            new Alert(Alert.AlertType.ERROR, "Failed to delete answer.").showAndWait();
-			        }
-			    } else {
-			        question.setQuestionText(newText);
-			        database.updateQuestion( question);  
-			        showDetailView(question); 
-			    }
-			});
-			switchView(editBox);
-		});
-		return editButton;
-	}
 	/**********
 	 * <p>
 	 * Method: createQuestionData
@@ -321,40 +280,27 @@ public class QuestionGui {
 				Label resolvedLabel = new Label("\u2714");
 				resolvedLabel.setStyle("-fx-text-fill: green; -fx-font-size:20px");
 				resolvedLabel.setVisible(a.getResolved());
-				
 				// upvote and downvote
 				Button upvoteButton = new Button("\u25B2");
 				Button downvoteButton = new Button("\u25BC");
-				String currentUser = database.getCurrentUsername();
-				int voted = database.getUserVote(currentUser, a.getId());
-				if(voted !=0) {
-					upvoteButton.setDisable(true);
-					downvoteButton.setDisable(true);
-				}
 				// if upvote clicked, it disables downvote for answer
 				upvoteButton.setOnAction(e -> {
-					a.setScore(a.getScore()+1);
+					a.setScore(1);
 					scoreLabel.setText("score: " + a.getScore());
 					upvoteButton.setDisable(true);
 					downvoteButton.setDisable(true);
-					database.updateAnswer(a, question.getId());
-					database.saveUserVote(currentUser, a.getId(), 1);
+					database.saveAnswer(a, question.getId());
 				});
 				// same for downvote, only one vote per user
 				downvoteButton.setOnAction(e -> {
-					a.setScore(a.getScore()-1);
+					a.setScore(-1);
 					scoreLabel.setText("score: " + a.getScore());
 					upvoteButton.setDisable(true);
 					downvoteButton.setDisable(true);
-					database.updateAnswer(a, question.getId());
-					database.saveUserVote(currentUser,a.getId(),-1);
+					database.saveAnswer(a, question.getId());
 				});
-				
 				// marks the answer as having resolved the question
 				Button resolveButton = new Button("resolved question");
-				if(database.getCurrentUsername()!=question.getName()) {
-					resolveButton.setVisible(false);
-				}
 				resolveButton.setOnAction(e -> {
 					// disables all other resolve buttons
 					question.setResolved(true);
@@ -362,40 +308,11 @@ public class QuestionGui {
 						other.setResolved(false);
 					}
 					a.setResolved(true);
-					database.updateAnswer(a, question.getId());
+					database.saveAnswer(a, question.getId());
 					showDetailView(question);
 				});
-				//edit button
-				Button editButton = new Button("Edit answer");
-				if(!a.getName().equals(database.getCurrentUsername())) {
-					editButton.setVisible(false);
-				}
-				editButton.setOnAction(e ->{
-					TextArea editArea = new TextArea(a.getAnswerText());
-					Button saveButton = new Button("Save edit");
-					VBox editBox = new VBox(5, editArea, saveButton);
-					saveButton.setOnAction(ev -> {
-					    String newText = editArea.getText().trim();
-
-					    if (newText.isEmpty()) {
-					        try {
-					            database.deleteAnswer(a.getId());  
-					            question.getAnswers().remove(a);   
-					            showDetailView(question);         
-					        } catch (SQLException ex) {
-					            ex.printStackTrace();
-					            new Alert(Alert.AlertType.ERROR, "Failed to delete answer.").showAndWait();
-					        }
-					    } else {
-					        a.setAnswerText(newText);
-					        database.updateAnswer(a, question.getId());  
-					        showDetailView(question); 
-					    }
-					});
-					answersBox.getChildren().add(editBox);
-				});
 				HBox answerHorz = new HBox(upvoteButton, downvoteButton, scoreLabel, resolvedLabel, resolveButton);
-				answersBox.getChildren().addAll(answerHorz, answerLabel, commentBox, editButton);
+				answersBox.getChildren().addAll(answerHorz, answerLabel, commentBox);
 
 			}
 		}
@@ -593,7 +510,7 @@ public class QuestionGui {
 		for (Comment comment : answer.getComments()) {
 			// looks for all the comments and makes timestamps for them
 			String time = comment.gettimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-			Label commentLabel = new Label("-By:"+comment.getName() +" "+ comment.getText() + " (" + time + ") ");
+			Label commentLabel = new Label("-" + comment.getText() + " (" + time + ") ");
 			commentBox.getChildren().add(commentLabel);
 		}
 		TextField commentField = new TextField();
@@ -606,8 +523,8 @@ public class QuestionGui {
 			// table
 			String text = commentField.getText().trim();
 			if (!text.isEmpty()) {
-				answer.addComment(new Comment(answer.getName(), text));
-				database.updateAnswer(answer, question.getId());
+				answer.addComment(new Comment(text));
+				database.saveAnswer(answer, question.getId());
 				showDetailView(question);
 			}
 		});
@@ -680,10 +597,9 @@ public class QuestionGui {
 		// if all fields are filled
 		if (name != null && !name.isEmpty() && answerText != null && !answerText.isEmpty()) {
 			// adds a new answer to the database
-			Answer ans = new Answer(name, answerText, 0, false);
-			database.saveNewAnswer(ans, current.getId());
+			Answer ans = new Answer(name, answerText, 0);
 			current.addAnswer(ans);
-			showDetailView(current);
+			database.saveAnswer(ans, current.getId());
 		} else {
 			Alert alert = new Alert(Alert.AlertType.ERROR, "must input name and answer");
 			alert.showAndWait();
@@ -704,7 +620,7 @@ public class QuestionGui {
 	 */
 	private void showNewQuestion() {
 		// combo box is the drop down menu that has a list of similar questions to yours
-		Node questionField = customQuestionSearchField(database.getAllQuestions(),
+		ComboBox<String> questionBox = questionComboBox(database.getAllQuestions(),
 				matchedQuestion -> showDetailView(matchedQuestion));
 
 		VBox layout = new VBox(10);
@@ -720,7 +636,7 @@ public class QuestionGui {
 		submit.setOnAction(e -> {
 			String name = nameLabel.getText().trim();
 			String category = categoryField.getText().trim();
-			String questionText = ((TextField) questionField).getText().trim();
+			String questionText = questionBox.getEditor().getText();
 			// and if all info is there it creates a new question
 			if (!name.isEmpty() && !category.isEmpty() && !questionText.isEmpty()) {
 				Question q = new Question(name, category, questionText, currentIndex);
@@ -743,7 +659,7 @@ public class QuestionGui {
 			}
 		});
 
-		layout.getChildren().addAll(new Label("Ask a New Question"), nameLabel, categoryField, questionField, submit,
+		layout.getChildren().addAll(new Label("Ask a New Question"), nameLabel, categoryField, questionBox, submit,
 				cancel);
 
 		switchView(layout); // Trigger the view update via the callback
@@ -764,105 +680,59 @@ public class QuestionGui {
 	 * @param onQuestionSelected Callback function to run when a match is selected
 	 * @return A configured ComboBox with live search and selection behavior
 	 */
-	private Node customQuestionSearchField(List<Question> existingQuestions, Consumer<Question> onQuestionSelected) {
-	    TextField inputField = new TextField();
-	    inputField.setPromptText("Type your question here");
-	    inputField.setPrefWidth(400);
+	private ComboBox<String> questionComboBox(List<Question> existingQuestions, Consumer<Question> onQuestionSelected) {
+		ComboBox<String> questionBox = new ComboBox<>();
+		questionBox.setEditable(true);
+		questionBox.setPromptText("Type your question here");
+		questionBox.setPrefWidth(400);
+		// this takes a ll the questions and puts them in a list
+		List<String> existing = existingQuestions.stream().map(Question::getQuestionText).collect(Collectors.toList());
 
-	    // Create a popup dropdown
-	    Popup popup = new Popup();
-	    ListView<String> suggestionList = new ListView<>();
-	    suggestionList.setPrefWidth(400);
-	    suggestionList.setMaxHeight(150);
-	    popup.getContent().add(suggestionList);
-	    popup.setAutoHide(true);
+		// Live search as user types
+		questionBox.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
+			if (newVal == null || newVal.isBlank()) {
+				questionBox.getItems().clear();
+				return;
+			}
+			// separates the words into their own elements in the set
+			Set<String> inputWords = Arrays.stream(newVal.toLowerCase().split("\\W+")).filter(word -> !word.isBlank())
+					.collect(Collectors.toSet());
+			// maps the words onto
+			List<String> rankedMatches = existing.stream().map(q -> {
+				// this set, by taking all the existing words in a match and splitting them by
+				// white space
+				Set<String> questionWords = Arrays.stream(q.toLowerCase().split("\\W+")).collect(Collectors.toSet());
+				// then it takes the overlapping hits of each word and numbers them into the
+				// questionWords set
+				long overlap = inputWords.stream().filter(questionWords::contains).count();
+				// then it takes the highest hit questions and sorts them into the top 5 by
+				// looking at the map pairs
+				// of words and hits, then strips the hit amount away and puts that into the
+				// list
+				return Map.entry(q, overlap);
+			}).filter(entry -> entry.getValue() > 0).sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
+					.map(Map.Entry::getKey).limit(5).collect(Collectors.toList());
+			// runs the box after the sorting and splitting while live
+			Platform.runLater(() -> {
+				questionBox.getItems().setAll(rankedMatches);
+				questionBox.show();
+			});
+		});
 
-	    List<String> allQuestions = existingQuestions.stream()
-	            .map(Question::getQuestionText)
-	            .collect(Collectors.toList());
+		// Jump to question on selection
+		questionBox.setOnAction(e -> {
+			String selectedText = questionBox.getValue();
+			if (selectedText != null && !selectedText.isBlank()) {
+				Optional<Question> match = existingQuestions.stream()
+						.filter(q -> q.getQuestionText().equals(selectedText)).findFirst();
 
-	    // Update suggestions as user types
-	    inputField.textProperty().addListener((obs, oldVal, newVal) -> {
-	        if (newVal == null || newVal.isBlank()) {
-	            popup.hide();
-	            return;
-	        }
+				match.ifPresent(onQuestionSelected); // 💡 callback to show detail view
+			}
+		});
 
-	        Set<String> inputWords = Arrays.stream(newVal.toLowerCase().split("\\W+"))
-	                .filter(word -> !word.isBlank())
-	                .collect(Collectors.toSet());
-
-	        List<String> rankedMatches = allQuestions.stream()
-	                .map(q -> {
-	                    Set<String> qWords = Arrays.stream(q.toLowerCase().split("\\W+"))
-	                            .collect(Collectors.toSet());
-	                    long score = inputWords.stream().filter(qWords::contains).count();
-	                    return Map.entry(q, score);
-	                })
-	                .filter(entry -> entry.getValue() > 0)
-	                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
-	                .map(Map.Entry::getKey)
-	                .limit(5)
-	                .collect(Collectors.toList());
-
-	        suggestionList.getItems().setAll(rankedMatches);
-
-	        if (!popup.isShowing() && !rankedMatches.isEmpty()) {
-	            // Position the popup under the input field
-	            Bounds bounds = inputField.localToScreen(inputField.getBoundsInLocal());
-	            popup.show(inputField, bounds.getMinX(), bounds.getMaxY());
-	        } else if (rankedMatches.isEmpty()) {
-	            popup.hide();
-	        }
-	    });
-
-	    // Handle click selection
-	    suggestionList.setOnMouseClicked(event -> {
-	        String selected = suggestionList.getSelectionModel().getSelectedItem();
-	        if (selected != null) {
-	            inputField.setText(selected);
-	            popup.hide();
-	            existingQuestions.stream()
-	                    .filter(q -> q.getQuestionText().equals(selected))
-	                    .findFirst()
-	                    .ifPresent(onQuestionSelected);
-	        }
-	    });
-
-	    // Handle Enter key to select the first suggestion
-	    inputField.setOnKeyPressed(event -> {
-	        if (event.getCode() == KeyCode.DOWN) {
-	            suggestionList.requestFocus();
-	            suggestionList.getSelectionModel().selectFirst();
-	        } else if (event.getCode() == KeyCode.ENTER) {
-	            String selected = suggestionList.getItems().isEmpty() ? inputField.getText()
-	                    : suggestionList.getItems().get(0);
-	            inputField.setText(selected);
-	            popup.hide();
-	            existingQuestions.stream()
-	                    .filter(q -> q.getQuestionText().equals(selected))
-	                    .findFirst()
-	                    .ifPresent(onQuestionSelected);
-	        }
-	    });
-
-	    // Allow keyboard nav inside list
-	    suggestionList.setOnKeyPressed(event -> {
-	        if (event.getCode() == KeyCode.ENTER) {
-	            String selected = suggestionList.getSelectionModel().getSelectedItem();
-	            if (selected != null) {
-	                inputField.setText(selected);
-	                popup.hide();
-	                existingQuestions.stream()
-	                        .filter(q -> q.getQuestionText().equals(selected))
-	                        .findFirst()
-	                        .ifPresent(onQuestionSelected);
-	            }
-	        }
-	    });
-
-	    return inputField;
+		return questionBox;
 	}
+
 	/**********
 	 * <p>
 	 * Method: buildMainView
