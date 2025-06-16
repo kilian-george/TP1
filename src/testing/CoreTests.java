@@ -40,7 +40,7 @@ public class CoreTests {
 		String ansText = "The third user story expands on the user experience surrounding Q&A";
 		int score = 0;
 		
-		Answer answerOne = new Answer(nameTwo, ansText, score);
+		Answer answerOne = new Answer(nameTwo, ansText, score, false);
 		
 		questionOne.addAnswer(answerOne);
 		
@@ -59,7 +59,7 @@ public class CoreTests {
 		
 		String commentText = "Wow I never thought of it that way!";
 		
-		Comment commentOne = new Comment(commentText);
+		Comment commentOne = new Comment("Tom Bombadil", commentText);
 		
 		assertEquals("Ensures comment stores input correctly", commentText, commentOne.getText());
 		
