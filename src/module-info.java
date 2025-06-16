@@ -4,6 +4,6 @@ module TP1 {
 	requires javafx.graphics;
 	requires junit;
 	exports questionAndAnswer;
-	exports testing;
+	//exports testing;
 	opens applicationMainMethodClasses to javafx.graphics, javafx.fxml;
 }

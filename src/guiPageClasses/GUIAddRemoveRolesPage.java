@@ -6,8 +6,6 @@ import java.util.List;
 //import java.util.Optional;
 
 import applicationMainMethodClasses.FCMainClass;
-import databaseClasses.Database;
-import entityClasses.User;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -18,6 +16,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import databaseClasses.Database;
+import entityClasses.User;
 
 /*******
  * <p> Title: GUIAddRemoveRolesPage Class. </p>
@@ -111,8 +111,8 @@ public class GUIAddRemoveRolesPage {
 		theRootPane = theRoot;
 		theDatabase = database;
 		theUser = user;
-		
-		primaryStage.setTitle("CSE 360 Foundation Code: Admin Opertaions Page");
+		//Just a small typo here I found while working on the admin functions
+		primaryStage.setTitle("CSE 360 Foundation Code: Admin Operations Page");
 	
 		double WINDOW_WIDTH = FCMainClass.WINDOW_WIDTH;		
 
@@ -358,7 +358,8 @@ public class GUIAddRemoveRolesPage {
 		if (theRemoveRole.compareTo("<Select a role>") != 0) {
 			if (theDatabase.updateUserRole(theSelectedUser, theRemoveRole, "false") ) {
 				combobox_SelectRoleToRemove = new ComboBox <String>();
-				combobox_SelectRoleToRemove.setItems(FXCollections.observableArrayList(addList));
+				//minor typo here on the next line. It had add instead of remove
+				combobox_SelectRoleToRemove.setItems(FXCollections.observableArrayList(removeList));
 				combobox_SelectRoleToRemove.getSelectionModel().clearAndSelect(0);		
 				setupSelectedUser();
 			}				

@@ -742,6 +742,121 @@ public class Database {
 		}
 		return code;
 	}
+	
+	//Admin Story 2: Adding methods to set a OTP for the user, check the OTP for validation, and an expiration
+	public boolean setOneTimePassword(String username, String otp) {
+        String query = "UPDATE userDB SET oneTimePassword = ? WHERE username = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, otp);
+            pstmt.setString(2, username);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+	
+	
+	// Check one-time password and expire it
+    public boolean checkOneTimePassword(String username, String otp) {
+        String query = "SELECT oneTimePassword FROM userDB WHERE username = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                String storedOtp = rs.getString("oneTimePassword");
+                if (storedOtp != null && storedOtp.equals(otp)) {
+                    expireOneTimePassword(username);
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+	
+	
+    // Expire one-time password (set it to NULL)
+    public boolean expireOneTimePassword(String username) {
+        String query = "UPDATE userDB SET oneTimePassword = NULL WHERE username = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, username);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+	
+		//Admin Story 3: Setting a method to delete a user
+		// Delete user
+		//Updated the list to verify that user is deleted
+	     public boolean deleteUserByUsername(String username) {
+	        String query = "DELETE FROM userDB WHERE userName = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	            pstmt.setString(1, username);
+	            int rowsAffected = pstmt.executeUpdate();
+	            return rowsAffected > 0;
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            return false;
+	        }
+	    }
+	     
+	     
+	 	//Adding a code to get the invitation list to hopefully display the list of invitations from using the project
+	 	/*******
+	 	 * <p> Method: getInvitationList </p>
+	 	 * 
+	 	 * <p> Description: Returns a list of invitation codes with their corresponding email addresses and roles. </p>
+	 	 * 
+	 	 * @return a list of invitation details as formatted strings.
+	 	 * 
+	 	 */
+	 	public List<String> getInvitationList() {
+	 	    List<String> invitationList = new ArrayList<>();
+	 	    String query = "SELECT emailAddress, code, role FROM InvitationCodes";
+	 	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	 	        ResultSet rs = pstmt.executeQuery();
+	 	        while (rs.next()) {
+	 	            String email = rs.getString("emailAddress");
+	 	            String code = rs.getString("code");
+	 	            String role = rs.getString("role");
+	 	            invitationList.add(email + " - Code: " + code + " - Role: " + role);
+	 	        }
+	 	    } catch (SQLException e) {
+	 	        e.printStackTrace();
+	 	    }
+	 	    return invitationList;
+	 	}
+	 	
+	 	
+	 	//The following codes were the codes that I try to make to implement the "manage invitation " button GUI page.
+		
+		//This public method is good to go to implement for the GUIManageInvitationpage.java *Lines 317-357*
+	 
+		public boolean invitationCodeExists(String code, String email, String role) {
+		    String query = "SELECT COUNT(*) AS count FROM InvitationCodes WHERE code = ? AND emailAddress = ? AND role = ?";
+		    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+		        pstmt.setString(1, code);
+		        pstmt.setString(2, email);
+		        pstmt.setString(3, role);
+		        ResultSet rs = pstmt.executeQuery();
+		        if (rs.next()) {
+		            return rs.getInt("count") > 0;
+		        }
+		    } catch (SQLException e) {
+		        e.printStackTrace();
+		    }
+		    return false;
+		}	
+	     
+		
+		
 
 	/*******
 	 * <p>
@@ -1187,6 +1302,23 @@ public class Database {
 			e.printStackTrace();
 		}
 	}
+	
+	//The next set of comment will help implement the Admin story 4 
+	//Admin Story 4 that will List and update user accounts
+	// Get all usernames
+    public List<String> getAllUsernames() {
+        List<String> usernames = new ArrayList<>();
+        String query = "SELECT username FROM userDB";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                usernames.add(rs.getString("username"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return usernames;
+    }
 
 	/*******
 	 * <p>
@@ -1228,25 +1360,22 @@ public class Database {
 	}
 
 	/*******
-	 * <p>
-	 * Method: boolean updateUserRole(String username, String role, String value)
-	 * </p>
+	 * <p> Method: boolean updateUserRole(String username, String role, String value) </p>
 	 * 
-	 * <p>
-	 * Description: Update a specified role for a specified user's and set and
-	 * update all the current user attributes.
-	 * </p>
+	 * <p> Description: Update a specified role for a specified user's and set and update all the
+	 * 		current user attributes.</p>
 	 * 
 	 * @param username is the username of the user
+	 *  
+	 * @param role is string that specifies the role to update
 	 * 
-	 * @param role     is string that specifies the role to update
-	 * 
-	 * @param value    is the string that specified TRUE or FALSE for the role
+	 * @param value is the string that specified TRUE or FALSE for the role
 	 * 
 	 * @return true if the update was successful, else false
-	 * 
+	 *  
 	 */
 	// Update a users role
+	//**This method fully supports the Admin Story 5 task** -Ronaldo
 	public boolean updateUserRole(String username, String role, String value) {
 		if (role.compareTo("Admin") == 0) {
 			String query = "UPDATE userDB SET adminRole = ? WHERE username = ?";
