@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 import entityClasses.User;
+//Make sure to add this ↓ entity class 
 import entityClasses.Review;
 import questionAndAnswer.Answer;
 import questionAndAnswer.Comment;
