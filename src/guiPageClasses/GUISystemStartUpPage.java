@@ -118,6 +118,9 @@ public class GUISystemStartUpPage {
 	 */
 	public static GUIAdminUpdatePage theAdminUpdatePage = null;
 
+	//Adding the following objects 
+	public static GUICreateReviewPage theCreateReviewPage = null;
+
 	
 	/**********
 	 * <p> Public Static Singleton: theAdminUpdatePage </p>
@@ -191,6 +194,9 @@ public class GUISystemStartUpPage {
 	 *
 	 */
 	public static GUIUserUpdatePage theUserUpdatePage = null;
+
+	//Adding the following object
+	public static GUIViewMyReviewsPage theViewMyReviewsPage = null;
 
 	/**********************************************************************************************
 
