@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 import entityClasses.User;
+import entityClasses.Review;
 import questionAndAnswer.Answer;
 import questionAndAnswer.Comment;
 import questionAndAnswer.Question;
@@ -160,6 +161,18 @@ public class Database {
 	    		+"FOREIGN KEY (answer_id) REFERENCES Answers(id) ON DELETE CASCADE"
 	    		+")";
 	    		statement.execute(commentsTable);
+
+		//Added this for the reviewer class
+		// Create the Reviews table
+		String reviewsTable = "CREATE TABLE IF NOT EXISTS Reviews (" +
+		        "reviewId INT AUTO_INCREMENT PRIMARY KEY, " +
+		        "reviewerUsername VARCHAR(255), " +
+		        "targetId VARCHAR(255), " +  // could be question ID or answer ID
+		        "content TEXT, " +
+		        "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+		        "FOREIGN KEY (reviewerUsername) REFERENCES userDB(userName) ON DELETE CASCADE" +
+		        ")";
+		statement.execute(reviewsTable);
 	    	
 	}
 
@@ -1165,6 +1178,75 @@ public class Database {
 	        return usernames;
 	    }
 	
+	//This is where I added all the methods needed for the reviewer role
+	/**
+    	 * Adds a new review to the database.
+	 @param reviewerUsername the user writing the review
+    	 * @param targetId the question or answer ID being reviewed
+    	 * @param content the content of the review
+ 	 * @return true if the review was successfully added, false otherwise
+ 	 */
+    public boolean addReview(String reviewerUsername, String targetId, String content) {
+    	String sql = "INSERT INTO Reviews (reviewerUsername, targetId, content, timestamp) " +
+                "VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+   try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+       pstmt.setString(1, reviewerUsername);
+       pstmt.setString(2, targetId);
+       pstmt.setString(3, content);
+       pstmt.executeUpdate();
+       return true;
+   } catch (SQLException e) {
+       e.printStackTrace();
+       return false;
+   }
+    }
+
+    /**
+     * Retrieves all reviews written by the given reviewer.
+     * @param username the reviewer's username
+     * @return a list of Review objects
+     */
+    public List<Review> getReviewsByUser(String username) {
+    	List<Review> reviews = new ArrayList<>();
+        String sql = "SELECT * FROM Reviews WHERE reviewerUsername = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Review review = new Review(
+                    rs.getInt("reviewId"),
+                    rs.getString("reviewerUsername"),
+                    rs.getString("targetId"),
+                    rs.getString("content"),
+                    rs.getTimestamp("timestamp").toString()
+                );
+                reviews.add(review);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return reviews;
+
+    }
+
+     /**
+      * Deletes a review from the database by its ID.
+      *
+      * @param reviewId the ID of the review to delete
+      * @return true if deleted successfully, false otherwise
+      */
+    public boolean deleteReview(int reviewId) {
+        String sql = "DELETE FROM Reviews WHERE reviewId = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, reviewId);  
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+	//Ends here
 	
 	/*******
 	 * <p> Method: boolean updateUserRole(String username, String role, String value) </p>
