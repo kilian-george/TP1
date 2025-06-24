@@ -1248,6 +1248,20 @@ public class Database {
         }
     }
 	//Ends here
+//Secondary edits by me(Ronaldo):
+	public boolean submitReviewerRequest(String studentUsername, String message) {
+        String sql = "INSERT INTO ReviewerRequests (studentUsername, message) VALUES (?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, studentUsername);
+            pstmt.setString(2, message);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+	
 	
 	/*******
 	 * <p> Method: boolean updateUserRole(String username, String role, String value) </p>
