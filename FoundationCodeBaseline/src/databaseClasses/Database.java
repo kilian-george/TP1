@@ -7,11 +7,14 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import entityClasses.User;
+import privateMessages.Message;
 import questionAndAnswer.Answer;
 import questionAndAnswer.Comment;
 import questionAndAnswer.Question;
@@ -170,7 +173,7 @@ public class Database {
 				+ "text TEXT,"
 				+ "FOREIGN KEY (answer_id) REFERENCES Answers(id) ON DELETE CASCADE" + ")";
 		statement.execute(commentsTable);
-		
+		//this will store the votes so that a user can only vote 1 time
 		String votesTable = "CREATE TABLE IF NOT EXISTS Votes("+
 			    "id INT AUTO_INCREMENT PRIMARY KEY, "
 			    +"username VARCHAR(255), "
@@ -180,9 +183,119 @@ public class Database {
 			    +"FOREIGN KEY (answerId) REFERENCES Answers(id) ON DELETE CASCADE "
 			    +")";
 			statement.execute(votesTable);
+		String MessageTable = "CREATE TABLE IF NOT EXISTS Message("
+				+"id INT PRIMARY KEY AUTO_INCREMENT, "
+				+"sender VARCHAR(100) NOT NULL, "
+				+"receiver VARCHAR(100) NOT NULL, "
+				+"message TEXT NOT NULL, "
+				+"timestamp DATETIME NOT NULL, "
+				+"is_read BOOLEAN DEFAULT 0"
+				+")";
+		statement.execute(MessageTable);
+	}
+	
+	
+	public int sendMessage(Message messageObj) {
+		String query = "INSERT INTO Message (sender, receiver, message, timestamp, is_read) VALUES"
+				+ " (?, ?, ?, ?, ?)";
+		int genId = -1;
+		try (PreparedStatement pstmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)){
+			pstmt.setString(1,  messageObj.getSender());
+			pstmt.setString(2, messageObj.getReceiver());
+			pstmt.setString(3, messageObj.getMessage());
+			pstmt.setTimestamp(4, Timestamp.valueOf(messageObj.getTimestamp()));
+			pstmt.setBoolean(5, messageObj.isRead());
+			pstmt.executeUpdate();
+			ResultSet keys = pstmt.getGeneratedKeys();
+			if(keys.next()) {
+				genId = keys.getInt(1);
+				messageObj.setId(genId);
+			}
+		}catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return genId;
+	}
+	public void markAsRead(int id) {
+		String query = "UPDATE Message SET is_read = true WHERE id = ?";
+		try (PreparedStatement stmt = connection.prepareStatement(query)){
+			stmt.setInt(1, id);
+			stmt.executeUpdate();
+		}catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	public Message getMessageById(int id) {
+	    String query = "SELECT * FROM Message WHERE id = ?";
+	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	        pstmt.setInt(1, id);
+	        ResultSet rs = pstmt.executeQuery();
+	        if (rs.next()) {
+	            String sender = rs.getString("sender");
+	            String receiver = rs.getString("receiver");
+	            String messageText = rs.getString("message");
+	            boolean isRead = rs.getBoolean("is_read");
+	            LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime();
 
+	            Message message = new Message(sender, receiver, messageText, timestamp, isRead);
+	            message.setId(id);
+	            return message;
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return null;
 	}
 
+	
+	public List<Message> getUsersMessages(String user){
+		List<Message> message = new ArrayList<>();
+		String query = "SELECT * FROM Message where receiver = ?";
+		 try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+		        pstmt.setString(1, user);
+		        ResultSet rs = pstmt.executeQuery();
+		        while (rs.next()) {
+		        	String sender = rs.getString("sender");
+		            int id = rs.getInt("id");
+		            String receiver = rs.getString("receiver");
+		            String messageText = rs.getString("message");
+		       
+		            boolean isRead = rs.getBoolean("is_read");
+		            LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime(); ;
+		            Message a = new Message( sender, receiver, messageText,
+		            		timestamp, isRead);
+		            a.setId(id);
+		            message.add(a);
+		        }
+		    } catch (SQLException e) {
+		        e.printStackTrace();
+		    }
+		return message;
+	}
+	
+	public List<Message> getMessagesFromUser(String senderUsername) {
+	    List<Message> messages = new ArrayList<>();
+	    String query = "SELECT * FROM Message WHERE sender = ?";
+	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	        pstmt.setString(1, senderUsername);
+	        ResultSet rs = pstmt.executeQuery();
+	        while (rs.next()) {
+	            int id = rs.getInt("id");
+	            String receiver = rs.getString("receiver");
+	            String messageText = rs.getString("message");
+	            LocalDateTime timestamp = rs.getTimestamp("timestamp").toLocalDateTime();
+	            boolean isRead = rs.getBoolean("is_read");
+
+	            Message msg = new Message(senderUsername, receiver, messageText, timestamp, isRead);
+	            msg.setId(id);
+	            messages.add(msg);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return messages;
+	}
+	
 	/*******
 	 * <p>
 	 * Method: getAllQuestions
@@ -222,7 +335,45 @@ public class Database {
 		return questions;
 	}
 	
-	
+	public List<Question> getQuestionByUser(String user){
+		List<Question> userQuestion = new ArrayList<>();
+		 String query = "SELECT * FROM Questions WHERE username = ?";
+
+		    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+		        pstmt.setString(1, user);
+		        ResultSet rs = pstmt.executeQuery();
+
+		        while (rs.next()) {
+		            int id = rs.getInt("id");
+		            String category = rs.getString("category");
+		            String questionText = rs.getString("questionText");
+		            boolean isResolved = rs.getBoolean("isResolved");
+
+		            Question q = new Question(user, category, questionText, id);
+		            q.setResolved(isResolved);
+
+		            userQuestion.add(q);
+		        }
+		    } catch (SQLException e) {
+		        e.printStackTrace(); // or handle error more gracefully
+		    }
+
+		
+		
+		
+		return userQuestion;
+	}
+	/**
+	 * Retrieves all answers associated with a specific question ID from the database.
+	 * <p>
+	 * Executes a SQL query to fetch all records in the {@code Answers} table where the
+	 * {@code questionId} matches the provided ID. Each result is converted into an {@code Answer}
+	 * object and returned in a list.
+	 *
+	 * @param questionId the unique identifier of the question whose answers are being retrieved
+	 * @return a {@code List<Answer>} containing all answers linked to the specified question;
+	 *         the list is empty if no answers are found or an error occurs
+	 */
 	
 	public List<Answer> getAnswersForQuestion(int questionId) {		
 	    List<Answer> answers = new ArrayList<>();
@@ -276,7 +427,15 @@ public class Database {
 			e.printStackTrace();
 		}
 	}
-
+	/**
+	 * Deletes an answer from the database based on its unique identifier.
+	 * <p>
+	 * Executes a SQL {@code DELETE} statement on the {@code Answers} table, removing
+	 * the entry that matches the specified answer ID.
+	 *
+	 * @param answer the ID of the answer to be deleted
+	 * @throws SQLException if a database access error occurs or the SQL statement fails
+	 */
 	public void deleteAnswer(int answer) throws SQLException {
 		String delete = "DELETE FROM Answers WHERE id = ?";
 		try(PreparedStatement pstmt = connection.prepareStatement(delete)){
@@ -284,7 +443,17 @@ public class Database {
 			pstmt.executeUpdate();
 		}
 	}
-	
+	/**
+	 * Retrieves the vote value a specific user has given to a specific answer.
+	 * <p>
+	 * Executes a SQL {@code SELECT} query on the {@code Votes} table to find the vote
+	 * cast by the user identified by {@code username} on the answer with the given {@code answerId}.
+	 * If no vote is found, the method returns {@code 0} by default.
+	 *
+	 * @param username the name of the user whose vote is being queried
+	 * @param answerId the ID of the answer for which the vote is being retrieved
+	 * @return the vote value (e.g., 1 for upvote, -1 for downvote), or {@code 0} if no vote is found or an error occurs
+	 */
 	public int getUserVote(String username, int answerId) {
 	    String query = "SELECT vote FROM Votes WHERE username = ? AND answerId = ?";
 	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
@@ -299,7 +468,16 @@ public class Database {
 	    }
 	    return 0; 
 	}
-	
+	/**
+	 * Saves or updates a user's vote on a specific answer in the database.
+	 * <p>
+	 * If the user has already voted on the given answer, the existing vote is updated.
+	 * If no prior vote exists, a new vote record is inserted into the {@code Votes} table.
+	 *
+	 * @param username  the name of the user casting the vote
+	 * @param answerId  the ID of the answer being voted on
+	 * @param voteValue the value of the vote (e.g., 1 for upvote, -1 for downvote)
+	 */
 	public void saveUserVote(String username, int answerId, int voteValue) {
 		 String update = "UPDATE Votes SET vote = ? WHERE username = ? AND answerId = ?";
 		    String insert = "INSERT INTO Votes (username, answerId, vote) VALUES (?, ?, ?)";
@@ -354,6 +532,15 @@ public class Database {
 		}
 		return -1;
 	}
+	/**
+	 * Updates an existing question's details in the database.
+	 * <p>
+	 * Executes an SQL {@code UPDATE} statement to modify the question text, category,
+	 * and resolution status based on the provided {@code Question} object's ID.
+	 *
+	 * @param question the {@code Question} object containing the updated values and
+	 *                 the ID of the question to be updated
+	 */
 	public void updateQuestion(Question question) {
 		String update = "UPDATE Questions SET questionText = ?, category = ?, isResolved = ? WHERE id = ?";
 	    try (PreparedStatement pstmt = connection.prepareStatement(update)) {
