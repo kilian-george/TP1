@@ -103,6 +103,21 @@ public class Database {
 		}
 	}
 
+public void dropDatabase() {
+	    try (Statement stmt = connection.createStatement()) {
+	        // Drop all tables
+	        stmt.executeUpdate("DROP TABLE IF EXISTS InvitationCodes");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS userDB");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS Questions");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS Answers");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS Comments");
+
+	        // Recreate tables fresh
+	        createTables();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
 	
 /*******
  * <p> Method: createTables </p>
