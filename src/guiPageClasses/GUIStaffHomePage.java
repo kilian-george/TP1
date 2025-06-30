@@ -1,15 +1,23 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
+
 import applicationMainMethodClasses.FCMainClass;
 import databaseClasses.Database;
 import entityClasses.User;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import privateMessages.MessageGUI;
+import questionAndAnswer.QuestionGui;
 
 /*******
  * <p> Title: GUIStaffHomePage Class. </p>
@@ -44,7 +52,8 @@ public class GUIStaffHomePage {
 	
 	private Button button_Logout = new Button("Logout");
 	private Button button_Quit = new Button("Quit");
-
+	private StackPane questionGuiHolder = new StackPane();
+	private StackPane messageGuiHolder = new StackPane();
 	private Stage primaryStage;	
 	private Pane theRootPane;
 	private Database theDatabase;
@@ -117,15 +126,66 @@ public class GUIStaffHomePage {
 	 * 
 	 */
 	public void setup() {
+		QuestionGui questionGui = new QuestionGui();
+		questionGui.setOnViewSwitch(view -> {
+			questionGuiHolder.getChildren().setAll(view);
+		});
+		// creates the parent and the holder so that a scrollpane is 
+		//possible
+		Parent questionMod = null;
+		try {
+			questionMod = questionGui.getView(theDatabase);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		questionGuiHolder.getChildren().setAll(questionMod);
+		ScrollPane scrollPane = new ScrollPane(questionGuiHolder);
+		//sets the scrollpane to fit the outer window
+		 scrollPane.setFitToWidth(true);
+		    scrollPane.setFitToHeight(true);
+		    scrollPane.setPannable(true);
+		    scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+		    scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		    scrollPane.setPrefHeight(400);
+		   StackPane centerPane = new StackPane(scrollPane);
+		   //sets the location of the scrollpane
+		   centerPane.setPrefWidth(FCMainClass.WINDOW_WIDTH);
+		   centerPane.setLayoutX(0);
+		   centerPane.setLayoutY(90);
+		   centerPane.setPadding(new Insets(20));
 		theRootPane.getChildren().clear();		
 	    theRootPane.getChildren().addAll(
 			label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
 	        line_Separator4, 
 	        button_Logout,
-	        button_Quit
+	        button_Quit,
+	        createMessageNotif()
 	    );
 			
 	}
+	
+	private StackPane createMessageNotif() {
+		Button topMessageButton = new Button("Messages");
+		
+		topMessageButton.setOnAction(e -> {
+			MessageGUI messageGui = new MessageGUI();
+			messageGui.setOnViewSwitch(view -> {
+				questionGuiHolder.getChildren().setAll(view);
+			});
+			try {
+	            Parent messageView = messageGui.getView(theDatabase);
+	            questionGuiHolder.getChildren().setAll(messageView);  // switch to message view
+	        } catch (SQLException ex) {
+	            ex.printStackTrace();
+	        }
+	    });
+
+		    StackPane stack = new StackPane(topMessageButton);
+		return stack;
+	}
+	
+	
 	
 	/**********
 	 * Private local method to initialize the standard fields for a label

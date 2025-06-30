@@ -499,6 +499,9 @@ public class GUISystemStartUpPage {
 			text_AdminPassword2.setText("");
 			label_PasswordsDoNotMatch.setText("The two passwords must match. Please try again!");
 		}
+		text_AdminPassword1.clear();
+		text_AdminPassword2.clear();
+		text_AdminUsername.clear();
 	}
 	
 	private void doLogin() throws SQLException {		
@@ -599,6 +602,15 @@ public class GUISystemStartUpPage {
 					theSingleRoleDispatch.doSingleRoleDispatch(primaryStage, theRootPane, database, user);
 				}
 			}
+			else if (user.getStaffRole()) {
+				loginResult = database.loginStaff(user);
+				if (loginResult) {
+					if (theSingleRoleDispatch == null)
+						theSingleRoleDispatch =  new GUISingleRoleDispatch();
+					theSingleRoleDispatch.doSingleRoleDispatch(primaryStage, theRootPane, database, user);
+				}
+			}
+			
 		} else if (numberOfRoles > 1) {
 			// Multiple Account Home Page - The user chooses which role to play
 			if (theMultipleRoleDispatchPage == null)
@@ -606,6 +618,8 @@ public class GUISystemStartUpPage {
 					new GUIMultipleRoleDispatchPage(primaryStage, theRootPane, database, user);
 			theMultipleRoleDispatchPage.doSetup();
 		}
+		text_Password.clear();
+		text_Username.clear();
 	}
 
 	
@@ -742,9 +756,12 @@ public class GUISystemStartUpPage {
 		else {
 			// The two passwords are NOT the same, so clear the passwords, explain the passwords
 			// must be the same, and clear the message as soon as the first character is typed.
-			text_AdminPassword1.setText("");
-			text_AdminPassword2.setText("");
+			text_Password1.setText("");
+			text_Password2.setText("");
 			label_PasswordsDoNotMatch.setText("The two passwords must match. Please try again!");
 		}
+		text_Password1.clear();
+		text_Password2.clear();
+		text_Username.clear();
 	}
 }

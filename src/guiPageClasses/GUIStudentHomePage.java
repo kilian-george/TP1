@@ -5,16 +5,21 @@ import java.sql.SQLException;
 import applicationMainMethodClasses.FCMainClass;
 import databaseClasses.Database;
 import entityClasses.User;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import privateMessages.MessageGUI;
 import questionAndAnswer.QuestionGui;
 
 /*******
@@ -47,7 +52,7 @@ public class GUIStudentHomePage {
 	private Line line_Separator1 = new Line(20, 95, FCMainClass.WINDOW_WIDTH-20, 95);
 	
 	private Line line_Separator4 = new Line(20, 525, FCMainClass.WINDOW_WIDTH-20,525);
-	
+	private Button messageButton = new Button("messages");
 	private Button button_Logout = new Button("Logout");
 	private Button button_Quit = new Button("Quit");
 	private Stage primaryStage;	
@@ -55,6 +60,8 @@ public class GUIStudentHomePage {
 	private Database theDatabase;
 	private User theUser;
 	private StackPane questionGuiHolder = new StackPane();
+	private StackPane messageGuiHolder = new StackPane();
+
 
 	/**********************************************************************************************
 
@@ -111,7 +118,7 @@ public class GUIStudentHomePage {
         
         setupButtonUI(button_Quit, "Dialog", 18, 250, Pos.CENTER, 300, 540);
         button_Quit.setOnAction((event) -> {performQuit(); });
-        
+      
         setup();
 	}
 
@@ -125,24 +132,59 @@ public class GUIStudentHomePage {
 	 * 
 	 */
 	public void setup() throws SQLException {
-		//testing testing!!!!!!
 		QuestionGui questionGui = new QuestionGui();
 		questionGui.setOnViewSwitch(view -> {
 			questionGuiHolder.getChildren().setAll(view);
 		});
+		// creates the parent and the holder so that a scrollpane is 
+		//possible
 		Parent questionMod = questionGui.getView(theDatabase);
 		questionGuiHolder.getChildren().setAll(questionMod);
-		setupViewUI(questionGuiHolder, 100, 100, FCMainClass.WINDOW_WIDTH-40);
+		ScrollPane scrollPane = new ScrollPane(questionGuiHolder);
+		//sets the scrollpane to fit the outer window
+		 scrollPane.setFitToWidth(true);
+		    scrollPane.setFitToHeight(true);
+		    scrollPane.setPannable(true);
+		    scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+		    scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		    scrollPane.setPrefHeight(400);
+		   StackPane centerPane = new StackPane(scrollPane);
+		   //sets the location of the scrollpane
+		   centerPane.setPrefWidth(FCMainClass.WINDOW_WIDTH);
+		   centerPane.setLayoutX(0);
+		   centerPane.setLayoutY(90);
+		   centerPane.setPadding(new Insets(20));
 		theRootPane.getChildren().clear();		
 	    theRootPane.getChildren().addAll(
 			label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
 	        line_Separator4, 
 	        button_Logout,
-	        //testing testing
-	        button_Quit,questionGuiHolder
+	        button_Quit,centerPane, createMessageNotif()
 	    );
 			
 	}
+	private StackPane createMessageNotif() {
+		Button topMessageButton = new Button("Messages");
+		
+		topMessageButton.setOnAction(e -> {
+			MessageGUI messageGui = new MessageGUI();
+			messageGui.setOnViewSwitch(view -> {
+				questionGuiHolder.getChildren().setAll(view);
+			});
+			try {
+	            Parent messageView = messageGui.getView(theDatabase);
+	            questionGuiHolder.getChildren().setAll(messageView);  // switch to message view
+	        } catch (SQLException ex) {
+	            ex.printStackTrace();
+	        }
+	    });
+
+		    StackPane stack = new StackPane(topMessageButton);
+		return stack;
+	}
+	
+	
+	
 	private void setupViewUI(Parent view, double x, double y, double width) {
 		view.setLayoutX(x);
 		view.setLayoutY(y);
