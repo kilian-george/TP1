@@ -83,7 +83,7 @@ public class GUIStaffHomePage {
 	 * 
 	 */
 	@SuppressWarnings("unused")
-	public GUIStaffHomePage(Stage ps, Pane theRoot, Database database, User user) {
+	public GUIStaffHomePage(Stage ps, Pane theRoot, Database database, User user) throws SQLException{
 		GUISystemStartUpPage.theStaffHomePage = this;
 		
 		FCMainClass.activeHomePage = 5;
@@ -125,20 +125,14 @@ public class GUIStaffHomePage {
 	 * content.</p>
 	 * 
 	 */
-	public void setup() {
+	public void setup() throws SQLException{
 		QuestionGui questionGui = new QuestionGui();
 		questionGui.setOnViewSwitch(view -> {
 			questionGuiHolder.getChildren().setAll(view);
 		});
 		// creates the parent and the holder so that a scrollpane is 
 		//possible
-		Parent questionMod = null;
-		try {
-			questionMod = questionGui.getView(theDatabase);
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		Parent questionMod = questionGui.getView(theDatabase);
 		questionGuiHolder.getChildren().setAll(questionMod);
 		ScrollPane scrollPane = new ScrollPane(questionGuiHolder);
 		//sets the scrollpane to fit the outer window
@@ -160,6 +154,7 @@ public class GUIStaffHomePage {
 	        line_Separator4, 
 	        button_Logout,
 	        button_Quit,
+	        centerPane,
 	        createMessageNotif()
 	    );
 			
