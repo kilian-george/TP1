@@ -10,6 +10,11 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.geometry.Insets;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -52,6 +57,7 @@ public class GUIStudentHomePage {
 	private Pane theRootPane;
 	private Database theDatabase;
 	private User theUser;
+	private StackPane questionGuiHolder = new StackPane();
 
 	/**********************************************************************************************
 
@@ -79,7 +85,7 @@ public class GUIStudentHomePage {
 	 */
 	@SuppressWarnings("unused")
 	public GUIStudentHomePage(Stage ps, Pane theRoot, Database database, User user) throws SQLException {
-		GUISystemStartUpPage.theStudentHomePage = this;
+		//GUISystemStartUpPage.theStudentHomePage = this;
 		
 		FCMainClass.activeHomePage = 2;
 
@@ -122,19 +128,34 @@ public class GUIStudentHomePage {
 	 * 
 	 */
 	public void setup() throws SQLException {
-		//testing testing!!!!!!
 		QuestionGui questionGui = new QuestionGui();
+		questionGui.setOnViewSwitch(view -> {
+			questionGuiHolder.getChildren().setAll(view);
+		});
 		Parent questionMod = questionGui.getView(theDatabase);
-		
-		setupViewUI(questionMod, 20, 100, FCMainClass.WINDOW_WIDTH-40);
-		theRootPane.getChildren().clear();		
-	    theRootPane.getChildren().addAll(
-			label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
-	        line_Separator4, 
-	        button_Logout,
-	        //testing testing
-	        button_Quit,questionMod
-	    );
+		questionGuiHolder.getChildren().setAll(questionMod);
+		questionGuiHolder.setMaxHeight(300);
+		questionGuiHolder.setMaxWidth(FCMainClass.WINDOW_WIDTH - 100);
+		questionGuiHolder.setStyle("-fx-border-color: lightgray;");
+
+		// Create layout and add everything
+		VBox layout = new VBox(20);
+		layout.setPadding(new Insets(20));
+		layout.setAlignment(Pos.TOP_LEFT);
+		layout.setFillWidth(true);
+
+		layout.getChildren().addAll(
+		    label_PageTitle,
+		    label_UserDetails,
+		    button_UpdateThisUser,
+		    new Label("──────────────────────────────────────────────"),
+		    questionGuiHolder,
+		    new Label("──────────────────────────────────────────────"),
+		    new HBox(30, button_Logout, button_Quit)
+		);
+	    // Clear root and apply layout
+	    theRootPane.getChildren().clear();
+	    theRootPane.getChildren().add(layout);
 			
 	}
 	private void setupViewUI(Parent view, double x, double y, double width) {
@@ -183,13 +204,9 @@ public class GUIStudentHomePage {
 	
 	**********************************************************************************************/
 	
-	private void performUpdate () {
-		if (GUISystemStartUpPage.theUserUpdatePage == null)
-			GUISystemStartUpPage.theUserUpdatePage = 
-				new GUIUserUpdatePage(primaryStage, theRootPane, theDatabase, theUser);
-		else
-			GUISystemStartUpPage.theUserUpdatePage.setup();	
-	}	
+	private void performUpdate() {
+		new GUIUserUpdatePage(primaryStage, theRootPane, theDatabase, theUser);
+	}
 
 	
 	private void performLogout() {
