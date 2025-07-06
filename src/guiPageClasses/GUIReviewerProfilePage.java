@@ -86,7 +86,7 @@ public class GUIReviewerProfilePage {
         theRootPane.getChildren().setAll(layout);
     }
     private void performBack() {
-        GUISystemStartUpPage.theReviewerHomePage = 
-            new GUIReviewerHomePage(primaryStage, new Pane(), database, currentUser);
+        GUIReviewerHomePage homePage = new GUIReviewerHomePage(primaryStage, theRootPane, database, currentUser);
+        homePage.setup();
     }
 }
