@@ -2,6 +2,7 @@ package guiPageClasses;
 
 import java.sql.SQLException;
 
+
 import applicationMainMethodClasses.FCMainClass;
 
 import javafx.geometry.Pos;
@@ -16,6 +17,8 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import databaseClasses.Database;
 import entityClasses.User;
+import userNameRecognizer.UserNameRecognizer;
+import passwordEvaluator.PasswordEvaluator;
 
 /*******
  * <p> Title: GUIStartupPage Class. </p>
@@ -118,9 +121,9 @@ public class GUISystemStartUpPage {
 	 */
 	public static GUIAdminUpdatePage theAdminUpdatePage = null;
 
-	//Adding the following objects 
 	public static GUICreateReviewPage theCreateReviewPage = null;
-
+	
+	
 	
 	/**********
 	 * <p> Public Static Singleton: theAdminUpdatePage </p>
@@ -194,10 +197,10 @@ public class GUISystemStartUpPage {
 	 *
 	 */
 	public static GUIUserUpdatePage theUserUpdatePage = null;
-
-	//Adding the following object
+	
 	public static GUIViewMyReviewsPage theViewMyReviewsPage = null;
 
+	
 	/**********************************************************************************************
 
 	Constructor
@@ -352,7 +355,12 @@ public class GUISystemStartUpPage {
          
         // Set up the Log In button
         setupButtonUI(button_Login, "Dialog", 18, 200, Pos.CENTER, 475, 180);
-            button_Login.setOnAction((event) -> {doLogin(); });
+            button_Login.setOnAction((event) -> {try {
+				doLogin();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} });
             
         alertUsernamePasswordError.setTitle("Invalid username/password!");
         alertUsernamePasswordError.setHeaderText(null);
@@ -449,7 +457,23 @@ public class GUISystemStartUpPage {
 	}
 
 	private void doSetupAdmin() {
+		String error = UserNameRecognizer.checkForValidUserName(adminUsername);
+		if (!error.isEmpty()) {
+		    Alert alert = new Alert(Alert.AlertType.ERROR);
+		    alert.setContentText(error);
+		    alert.showAndWait();
+		    return;
+		}
 		
+		if (!PasswordEvaluator.isValid(adminPassword1)) {
+		    Alert alert = new Alert(Alert.AlertType.ERROR);
+		    alert.setTitle("Invalid Password");
+		    alert.setHeaderText("Password Requirements Not Met");
+		    alert.setContentText("Password must meet the standard security requirements...");
+		    alert.showAndWait();
+		    return;
+		}
+
 		// Make sure the two passwords are the same
 		if (adminPassword1.compareTo(adminPassword2) == 0) {
         	// Create the passwords and proceed to the user home page
@@ -459,34 +483,27 @@ public class GUISystemStartUpPage {
                 database.register(user);
                 System.out.println("Administrator Username and Password have been set.");
                 
-             // Shows confirmation and forces a fresh login 
-                Alert info = new Alert(Alert.AlertType.INFORMATION);
-                info.setTitle("Admin Account Created");
-                info.setHeaderText(null);
-                info.setContentText("Your admin account has been created. Please log in now.");
-                info.showAndWait();
-         
-                firstInvocation = false;
-             
-             setupNormalLogin();
-          
-             setup();
-             return;
-
-            } catch (SQLException e) {
+                
+                
+                // Navigate to the Account Update Page
+                GUISystemStartUpPage.theAdminUpdatePage = 
+                		new GUIAdminUpdatePage(primaryStage, theRootPane, database, user);
+            	} catch (SQLException e) {
                 System.err.println("Database error: " + e.getMessage());
                 e.printStackTrace();
             }
 
-        } else {
-            // The two passwords are NOT the same
-            text_AdminPassword1.setText("");
-            text_AdminPassword2.setText("");
-            label_PasswordsDoNotMatch.setText("The two passwords must match. Please try again!");
-        }
-        	}
+		}
+		else {
+			// The two passwords are NOT the same, so clear the passwords, explain the passwords
+			// must be the same, and clear the message as soon as the first character is typed.
+			text_AdminPassword1.setText("");
+			text_AdminPassword2.setText("");
+			label_PasswordsDoNotMatch.setText("The two passwords must match. Please try again!");
+		}
+	}
 	
-	private void doLogin() {		
+	private void doLogin() throws SQLException {		
 		String username = text_Username.getText();
 		String password = text_Password.getText();
     	boolean loginResult = false;
@@ -516,26 +533,14 @@ public class GUISystemStartUpPage {
     		return;
     	}
     	
-    	
 		int numberOfRoles = database.getNumberOfRoles(user);		
-		
-		// Rejects having O roles
-				if (numberOfRoles == 0) {
-				    Alert alertNoRoles = new Alert(Alert.AlertType.INFORMATION);
-				    alertNoRoles.setTitle("No Roles Assigned");
-				    alertNoRoles.setHeaderText(null);
-				    alertNoRoles.setContentText(
-				        "Your account currenlty has no roles assigned. Contact an administrator for help."
-				    );
-				    alertNoRoles.showAndWait();
-				    return;
-				}
 		
 		
 		if (numberOfRoles == 1) {
 			// Single Account Home Page - The user has no choice here
 			
 			// Admin role
+			
 			if (user.getAdminRole()) {
 				loginResult = database.loginAdmin(user);
 				if (loginResult) {
@@ -568,7 +573,7 @@ public class GUISystemStartUpPage {
 					theSingleRoleDispatch.doSingleRoleDispatch(primaryStage, theRootPane, database, user);
 				}
 			// Staff roles
-			} else if (user.getInstructorRole()) {
+			} else if (user.getStaffRole()) {
 				loginResult = database.loginStaff(user);
 				if (loginResult) {
 					if (theSingleRoleDispatch == null)
@@ -639,68 +644,77 @@ public class GUISystemStartUpPage {
 	
 
 	private void doCreateUser(String role, String iCode) {
-		System.out.println("Entered doCreateUser.");
-		String username = text_Username.getText();
-		String password = text_Password1.getText();
-		String emailAddress = database.getEmailAddressUsingCode(iCode);
+	    System.out.println("Entered doCreateUser.");
+	    String username = text_Username.getText();
+	    String password1 = text_Password1.getText();
+	    String password2 = text_Password2.getText();
+	    String emailAddress = database.getEmailAddressUsingCode(iCode);
 
-		User user;
-				
-		if (role.compareTo("Admin") == 0) {
-			FCMainClass.activeHomePage = 1;
-			user = new User(username, password, true, false, false, false, false);
-		} else if (role.compareTo("Student") == 0) {
-			FCMainClass.activeHomePage = 2;
-			user = new User(username, password, false, true, false, false, false);			
-		} else if (role.compareTo("Reviewer") == 0) {
-			FCMainClass.activeHomePage = 3;
-			user = new User(username, password, false, false, true, false, false);			
-		} else if (role.compareTo("Instructor") == 0) {
-			FCMainClass.activeHomePage = 4;
-			user = new User(username, password, false, false, false, true, false);			
-		} else if (role.compareTo("Staff") == 0) {
-			FCMainClass.activeHomePage = 5;
-			user = new User(username, password, false, false, false, false, true);			
-		} else {
-			user = new User("", "", false, false, false, false, false);
-		}
+	    // Validate the password using PasswordEvaluator
+	    if (!PasswordEvaluator.isValid(password1)) {
+	        // Show helpful alert for invalid password
+	        Alert alert = new Alert(Alert.AlertType.ERROR);
+	        alert.setTitle("Invalid Password");
+	        alert.setHeaderText("Password Requirements Not Met");
+	        alert.setContentText("Password must be at least 8 characters long and include:\n" +
+	                             "- At least one uppercase letter\n" +
+	                             "- At least one lowercase letter\n" +
+	                             "- At least one number\n" +
+	                             "- At least one special character (e.g., !@#$%^&*)");
+	        alert.showAndWait();
+	        return;
+	    }
 
-		// Make sure the two passwords are the same		
-		if (text_Password1.getText().compareTo(text_Password2.getText()) == 0) {
-			System.out.println("The User Passwords match");
-			
-        	// Create the account and proceed to the user account update page
-            try {
-            	// Create a new User object with the pre-set role and register in the database
-                database.register(user);
-                System.out.println("The user's Username and Password have been set.");
-                System.out.println("Username: " + username);
-                database.removeInvitationAfterUse(text_Invitation.getText());
-                database.getUserAccountDetails(username);
-                if (database.getCurrentEmailAddress() == null ||
-                		database.getCurrentEmailAddress().length() == 0) {
-                	System.out.println("Updating user; " + username + " email address to: "+ emailAddress);
-                	database.updateEmailAddress(username, emailAddress);
-                }
-                // Navigate to the Welcome Login Page
-                if (theUserUpdatePage == null)
-                	theUserUpdatePage = 
-                		new GUIUserUpdatePage(primaryStage, theRootPane, database, user);
-                else
-                	theUserUpdatePage.setup();
-            } catch (SQLException e) {
-                System.err.println("Database error: " + e.getMessage());
-                e.printStackTrace();
-            }
+	    // Ensure passwords match
+	    if (!password1.equals(password2)) {
+	        text_Password1.setText("");
+	        text_Password2.setText("");
+	        label_PasswordsDoNotMatch.setText("The two passwords must match. Please try again!");
+	        return;
+	    }
 
-		}
-		else {
-			// The two passwords are NOT the same, so clear the passwords, explain the passwords
-			// must be the same, and clear the message as soon as the first character is typed.
-			text_AdminPassword1.setText("");
-			text_AdminPassword2.setText("");
-			label_PasswordsDoNotMatch.setText("The two passwords must match. Please try again!");
-		}
+	    // Set the appropriate user role
+	    User user;
+	    if (role.equals("Admin") ) {
+	        FCMainClass.activeHomePage = 1;
+	        user = new User(username, password1, true, false, false, false, false);
+	    } else if (role.equals("Student")) {
+	        FCMainClass.activeHomePage = 2;
+	        user = new User(username, password1, false, true, false, false, false);
+	    } else if (role.equals("Reviewer")) {
+	        FCMainClass.activeHomePage = 3;
+	        user = new User(username, password1, false, false, true, false, false);
+	    } else if (role.equals("Instructor")) {
+	        FCMainClass.activeHomePage = 4;
+	        user = new User(username, password1, false, false, false, true, false);
+	    } else if (role.equals("Staff")) {
+	        FCMainClass.activeHomePage = 5;
+	        user = new User(username, password1, false, false, false, false, true);
+	    } else {
+	        user = new User("", "", false, false, false, false, false);
+	    }
+
+	    try {
+	        database.register(user);
+	        System.out.println("The user's Username and Password have been set.");
+	        System.out.println("Username: " + username);
+	        database.removeInvitationAfterUse(text_Invitation.getText());
+	        database.getUserAccountDetails(username);
+	        if (database.getCurrentEmailAddress() == null || database.getCurrentEmailAddress().length() == 0) {
+	            System.out.println("Updating user; " + username + " email address to: " + emailAddress);
+	            database.updateEmailAddress(username, emailAddress);
+	        }
+
+	        if (theUserUpdatePage == null) {
+	            theUserUpdatePage = new GUIUserUpdatePage(primaryStage, theRootPane, database, user);
+	        } else {
+	            theUserUpdatePage.setup();
+	        }
+	    } catch (SQLException e) {
+	        System.err.println("Database error: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	    
 	}
-}
 
+}
