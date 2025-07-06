@@ -1,5 +1,7 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
+
 import applicationMainMethodClasses.FCMainClass;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
@@ -38,7 +40,12 @@ public class GUIManageInvitationPage {
         
         button_Back.setLayoutX(20);
         button_Back.setLayoutY(271);
-        button_Back.setOnAction((event) -> { performBack(); });
+        button_Back.setOnAction((event) -> { try {
+			performBack();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} });
 
         setup();
     }
@@ -48,7 +55,7 @@ public class GUIManageInvitationPage {
         theRootPane.getChildren().addAll(label_PageTitle, listView_Invitations, button_Back);
     }
 
-    private void performBack() {
+    private void performBack() throws SQLException {
         GUISystemStartUpPage.theAdminHomePage.setup();
     }
 }
