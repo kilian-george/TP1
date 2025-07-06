@@ -101,8 +101,11 @@ public class GUISingleRoleDispatch {
 			new GUIInstructorHomePage(primaryStage, theRootPane, theDatabase, theUser);			
 		} else if (user.getStaffRole()) {
 			theRoot.getChildren().clear();
-			new GUIStaffHomePage(primaryStage, theRootPane, theDatabase, theUser);			
-		} else {
+			try {
+				new GUIStaffHomePage(primaryStage, theRootPane, theDatabase, theUser);			
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}		} else {
 			// Invalid role
 			System.out.println("*** ERROR *** GUISingleRoleDispatch was asked to dispatch to " +
 			"a role that is not supported!");
