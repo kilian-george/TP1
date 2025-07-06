@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import databaseClasses.Database;
 import entityClasses.User;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public class GUIListUsersPage {
@@ -44,7 +45,14 @@ public class GUIListUsersPage {
 
         button_Back.setLayoutX(20);
         button_Back.setLayoutY(400);
-        button_Back.setOnAction(e -> performBack());
+        button_Back.setOnAction(e -> {
+			try {
+				performBack();
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
 
         setup();
     }
@@ -65,7 +73,7 @@ public class GUIListUsersPage {
             listView_Users.getItems().add("Error retrieving user list from database.");
         }
     }
-    private void performBack() {
+    private void performBack() throws SQLException {
         GUISystemStartUpPage.theAdminHomePage.setup();
     }
 }
