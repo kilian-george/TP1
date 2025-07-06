@@ -5,11 +5,11 @@ import java.sql.SQLException;
 import databaseClasses.Database;
 import guiPageClasses.GUISystemStartUpPage;
 import javafx.application.Application;
-import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
 
 /*******
  * <p> Title: FCMainClass Class </p>
@@ -32,7 +32,7 @@ public class FCMainClass extends Application {
 	/**********
 	 * This specifies the width of the application window
 	 */
-	public final static double WINDOW_WIDTH = 800;
+	public final static double WINDOW_WIDTH = 1000;
 
 	/**********
 	 * This specifies the height of the application window
