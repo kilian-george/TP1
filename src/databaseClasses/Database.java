@@ -1,4 +1,5 @@
 package databaseClasses;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -11,11 +12,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import entityClasses.Review;
 import entityClasses.User;
 import privateMessages.Message;
 import questionAndAnswer.Answer;
 import questionAndAnswer.Comment;
 import questionAndAnswer.Question;
+
 /*******
  * <p>
  * Title: Database Class.
@@ -152,15 +156,16 @@ public class Database {
 		String answersTable = "CREATE TABLE IF NOT EXISTS Answers (" + "id INT AUTO_INCREMENT PRIMARY KEY, "
 				+ "questionId INT, " + "username VARCHAR(255), " + "answerText TEXT, " + "score INT DEFAULT 0, "
 				+ "resolved BOOLEAN DEFAULT FALSE, "
-				+ "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE,"
-				+"isPrivate BOOLEAN)";
+				+"isPrivate BOOLEAN,"
+				+ "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE)";
 		statement.execute(answersTable);
 
 		// cretes comments table
 		String commentsTable = "CREATE TABLE IF NOT EXISTS Comments (" + "id INT PRIMARY KEY AUTO_INCREMENT,"
 				+ "answer_id INT," + "username VARCHAR(100)," + "text TEXT,"
-				+"created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
-				+"FOREIGN KEY (answer_id) REFERENCES Answers(id) ON DELETE CASCADE" + ")";
+				+ "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+				+ "isPrivate BOOLEAN,"
+				+ "FOREIGN KEY (answer_id) REFERENCES Answers(id) ON DELETE CASCADE" + ")";
 		statement.execute(commentsTable);
 		// this will store the votes so that a user can only vote 1 time
 		String votesTable = "CREATE TABLE IF NOT EXISTS Votes(" + "id INT AUTO_INCREMENT PRIMARY KEY, "
@@ -172,7 +177,15 @@ public class Database {
 				+ "sender VARCHAR(100) NOT NULL, " + "receiver VARCHAR(100) NOT NULL, " + "message TEXT NOT NULL, "
 				+ "timestamp DATETIME NOT NULL, " + "is_read BOOLEAN DEFAULT 0" + ")";
 		statement.execute(MessageTable);
+
+		// Create the Reviews table
+		String reviewsTable = "CREATE TABLE IF NOT EXISTS Reviews (" + "reviewId INT AUTO_INCREMENT PRIMARY KEY, "
+				+ "reviewerUsername VARCHAR(255), " + "targetId VARCHAR(255), " + // could be question ID or answer ID
+				"content TEXT, " + "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				+ "FOREIGN KEY (reviewerUsername) REFERENCES userDB(userName) ON DELETE CASCADE" + ")";
+		statement.execute(reviewsTable);
 	}
+
 	/**
 	 * Inserts a new message into the database and returns the generated message ID.
 	 *
@@ -382,6 +395,7 @@ public class Database {
 		}
 		return questions;
 	}
+
 	/**
 	 * Retrieves all questions submitted by a specific user.
 	 *
@@ -447,9 +461,10 @@ public class Database {
 				String username = rs.getString("username");
 				String answerText = rs.getString("answerText");
 				int score = rs.getInt("score");
+				boolean isPrivate = rs.getBoolean("isPrivate");
 				boolean resolved = rs.getBoolean("resolved");
 
-				Answer a = new Answer(username, answerText, score, resolved);
+				Answer a = new Answer(username, answerText, score, resolved, isPrivate);
 				a.setId(id);
 				answers.add(a);
 			}
@@ -474,11 +489,12 @@ public class Database {
 	 */
 
 	public void saveNewAnswer(Answer answer, int questionId) {
-		String insert = "INSERT INTO Answers (questionId, username, answerText) VALUES (?, ?, ?)";
+		String insert = "INSERT INTO Answers (questionId, username, answerText, isPrivate) VALUES (?, ?, ?,?)";
 		try (PreparedStatement pstmt = connection.prepareStatement(insert)) {
 			pstmt.setInt(1, questionId);
 			pstmt.setString(2, answer.getName());
 			pstmt.setString(3, answer.getAnswerText());
+			pstmt.setBoolean(4, answer.getIsPrivate());
 			pstmt.executeUpdate();
 			ResultSet rs = pstmt.getGeneratedKeys();
 			if (rs.next()) {
@@ -726,18 +742,20 @@ public class Database {
 			e.printStackTrace();
 		}
 	}
+
 	public Comment getCommentById(int commentId) {
-		Comment retCom=null;
+		Comment retCom = null;
 		String query = "SELECT id, username, text, created_at FROM Comments WHERE id = ?";
 		try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-			pstmt.setInt(1,  commentId);
+			pstmt.setInt(1, commentId);
 			ResultSet rs = pstmt.executeQuery();
 			if (rs.next()) {
 				int id = rs.getInt("id");
 				String username = rs.getString("username");
 				String text = rs.getString("text");
 				LocalDateTime timestamp = rs.getTimestamp("created_at").toLocalDateTime();
-				retCom = new Comment(username, text);
+				Boolean isPrivate = rs.getBoolean("isPrivate");
+				retCom = new Comment(username, text, isPrivate);
 				retCom.setTimestamp(timestamp);
 				retCom.setId(id);
 			}
@@ -760,7 +778,7 @@ public class Database {
 	 * @return a list of {@link Comment} objects associated with the answer.
 	 */
 
-	public List<Comment> getCommentsByAnswerId(int answerId) {
+	public List<Comment> getCommentsByAnswerId(int answerId, boolean isPrivate) {
 		List<Comment> comments = new ArrayList<>();
 		String query = "SELECT username, text, created_at FROM Comments WHERE answer_id = ? ORDER BY id";
 		
@@ -775,7 +793,7 @@ public class Database {
 				String text = rs.getString("text");
 				LocalDateTime time = rs.getTimestamp("created_at").toLocalDateTime();
 				
-				retCom = new Comment(username, text);
+				retCom = new Comment(username, text, isPrivate);
 				retCom.setTimestamp(time);
 				comments.add(retCom);
 			}
@@ -1156,6 +1174,74 @@ public class Database {
 		}
 		return code;
 	}
+	//These lines of codes were used to test an Automation test to check if the invitation codes work
+
+	//The next set of codes were implemented to satisfy the 3rd-4th Admin stories
+		
+		//Admin Story 2: Adding methods to set a OTP for the user, check the OTP for validation, and an expiration
+		public boolean setOneTimePassword(String username, String otp) {
+	        String query = "UPDATE userDB SET oneTimePassword = ? WHERE username = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	            pstmt.setString(1, otp);
+	            pstmt.setString(2, username);
+	            int affectedRows = pstmt.executeUpdate();
+	            return affectedRows > 0;
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            return false;
+	        }
+	    }
+
+	 //    // Check one-time password and expire it
+	    public boolean checkOneTimePassword(String username, String otp) {
+	        String query = "SELECT oneTimePassword FROM userDB WHERE username = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	            pstmt.setString(1, username);
+	            ResultSet rs = pstmt.executeQuery();
+	            if (rs.next()) {
+	                String storedOtp = rs.getString("oneTimePassword");
+	                if (storedOtp != null && storedOtp.equals(otp)) {
+	                    expireOneTimePassword(username);
+	                    return true;
+	                }
+	            }
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	        return false;
+	    }
+
+	    // Expire one-time password (set it to NULL)
+	    public boolean expireOneTimePassword(String username) {
+	        String query = "UPDATE userDB SET oneTimePassword = NULL WHERE username = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	            pstmt.setString(1, username);
+	            int affectedRows = pstmt.executeUpdate();
+	            return affectedRows > 0;
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            return false;
+	        }
+	    }
+
+	    
+
+	    
+		
+		//Admin Story 3: Setting a method to delete a user
+	 // Delete user
+		//Updated the list to verify that user is deleted
+	     public boolean deleteUserByUsername(String username) {
+	        String query = "DELETE FROM userDB WHERE userName = ?";
+	        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	            pstmt.setString(1, username);
+	            int rowsAffected = pstmt.executeUpdate();
+	            return rowsAffected > 0;
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            return false;
+	        }
+	    }
 
 	/*******
 	 * <p>
@@ -1182,7 +1268,30 @@ public class Database {
 		}
 		return 0;
 	}
-
+	/*******
+	    * <p> Method: getInvitationList </p>
+	    * 
+	    * <p> Description: Returns a list of invitation codes with their corresponding email addresses and roles. </p>
+	    * 
+	    * @return a list of invitation details as formatted strings.
+	    * 
+	    */
+	   public List<String> getInvitationList() {
+	       List<String> invitationList = new ArrayList<>();
+	       String query = "SELECT emailAddress, code, role FROM InvitationCodes";
+	       try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	           ResultSet rs = pstmt.executeQuery();
+	           while (rs.next()) {
+	               String email = rs.getString("emailAddress");
+	               String code = rs.getString("code");
+	               String role = rs.getString("role");
+	               invitationList.add(email + " - Code: " + code + " - Role: " + role);
+	           }
+	       } catch (SQLException e) {
+	           e.printStackTrace();
+	       }
+	       return invitationList;
+	   }
 	/*******
 	 * <p>
 	 * Method: boolean emailaddressHasBeenUsed(String emailAddress)
@@ -1310,7 +1419,117 @@ public class Database {
 		}
 		return;
 	}
+	//The next set of comment will help implement the Admin story 4 
+	//Admin Story 4 that will List and update user accounts
+	 // Get all usernames
+	    public List<String> getAllUsernames() {
+	        List<String> usernames = new ArrayList<>();
+	        String query = "SELECT username FROM userDB";
+	        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+	            ResultSet rs = pstmt.executeQuery();
+	            while (rs.next()) {
+	                usernames.add(rs.getString("username"));
+	            }
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	        return usernames;
+	    }
+	
+	//This is where I added all the methods needed for the reviewer role
+	/**
+    	 * Adds a new review to the database.
+	 @param reviewerUsername the user writing the review
+    	 * @param targetId the question or answer ID being reviewed
+    	 * @param content the content of the review
+ 	 * @return true if the review was successfully added, false otherwise
+ 	 */
+    public boolean addReview(String reviewerUsername, String targetId, String content) {
+    	String sql = "INSERT INTO Reviews (reviewerUsername, targetId, content, timestamp) " +
+                "VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+   try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+       pstmt.setString(1, reviewerUsername);
+       pstmt.setString(2, targetId);
+       pstmt.setString(3, content);
+       pstmt.executeUpdate();
+       return true;
+   } catch (SQLException e) {
+       e.printStackTrace();
+       return false;
+   }
+    }
 
+    /**
+     * Retrieves all reviews written by the given reviewer.
+     * @param username the reviewer's username
+     * @return a list of Review objects
+     */
+    public List<Review> getReviewsByUser(String username) {
+    	List<Review> reviews = new ArrayList<>();
+        String sql = "SELECT * FROM Reviews WHERE reviewerUsername = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Review review = new Review(
+                    rs.getInt("reviewId"),
+                    rs.getString("reviewerUsername"),
+                    rs.getString("targetId"),
+                    rs.getString("content"),
+                    rs.getTimestamp("timestamp").toString()
+                );
+                reviews.add(review);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return reviews;
+
+    }
+
+     /**
+      * Deletes a review from the database by its ID.
+      *
+      * @param reviewId the ID of the review to delete
+      * @return true if deleted successfully, false otherwise
+      */
+    public boolean deleteReview(int reviewId) {
+        String sql = "DELETE FROM Reviews WHERE reviewId = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, reviewId);  
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+	//Ends here
+//Secondary edits by me(Ronaldo):
+	public boolean submitReviewerRequest(String studentUsername, String message) {
+        String sql = "INSERT INTO ReviewerRequests (studentUsername, message) VALUES (?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, studentUsername);
+            pstmt.setString(2, message);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+	
+	public void updateInvitationCodesTable() {
+	    String alterTableSQL = "ALTER TABLE InvitationCodes ADD COLUMN deadline TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP";
+
+	    try (Statement stmt = connection.createStatement()) {
+	        stmt.execute(alterTableSQL);
+	        System.out.println("[Database] ✅ InvitationCodes table updated with deadline column.");
+	    } catch (SQLException e) {
+	        System.out.println("[Database] ⚠️ InvitationCodes table already has deadline column or error occurred.");
+	        //This will verify if the database gives an error bc there is already a table made that cannot be erased so easily
+	    }
+	}
 	/*******
 	 * <p>
 	 * Method: String getFirstName(String username)
