@@ -65,8 +65,7 @@ public class GUIViewMyReviewsPage {
 
             {
                 btn.setOnAction(e -> {
-                  //This wasn't needed but I could use it later when we incorporate more coding into the reviewer role functions
-                  // Review r = getTableView().getItems().get(getIndex());
+                   // Review r = getTableView().getItems().get(getIndex());
                 });
             }
 
