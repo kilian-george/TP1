@@ -1,15 +1,23 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
+
 import applicationMainMethodClasses.FCMainClass;
+import databaseClasses.Database;
+import entityClasses.User;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import databaseClasses.Database;
-import entityClasses.User;
+import privateMessages.MessageGUI;
+import questionAndAnswer.QuestionGui;
 
 /*******
  * <p> Title: GUIReviewerHomePage Class. </p>
@@ -38,7 +46,7 @@ public class GUIReviewerHomePage {
 	private Button button_UpdateThisUser = new Button("Account Update");
 	private Button button_CreateReview = new Button("Create Review");
 	private Button button_ViewReviews = new Button("View My Reviews");
-	//Added the last two buttons to show up on the GUI
+	private Button button_ViewProfile = new Button("My Profile");
 	
 	private Line line_Separator1 = new Line(20, 95, FCMainClass.WINDOW_WIDTH-20, 95);
 	
@@ -47,6 +55,9 @@ public class GUIReviewerHomePage {
 	private Button button_Logout = new Button("Logout");
 	private Button button_Quit = new Button("Quit");
 
+	private StackPane questionGuiHolder = new StackPane();
+	private StackPane messageGuiHolder = new StackPane();
+	
 	private Stage primaryStage;	
 	private Pane theRootPane;
 	private Database theDatabase;
@@ -100,8 +111,7 @@ public class GUIReviewerHomePage {
 		
 		setupButtonUI(button_UpdateThisUser, "Dialog", 18, 170, Pos.CENTER, 610, 45);
 		button_UpdateThisUser.setOnAction((event) -> {performUpdate(); });
-
-		//Starts here
+		
 		//Add the following button UIs to the page for "Create Review" and "View my Review"
 		setupButtonUI(button_CreateReview, "Dialog", 18, 250, Pos.CENTER, 580, 540);
 		button_CreateReview.setOnAction(e -> {
@@ -110,13 +120,17 @@ public class GUIReviewerHomePage {
 
 		setupButtonUI(button_ViewReviews, "Dialog", 18, 170, Pos.CENTER, 250, 120);
 		button_ViewReviews.setOnAction((event) -> { performViewMyReviews(); });
-		//Ends here
+
+		setupButtonUI(button_ViewProfile, "Dialog", 18, 170, Pos.CENTER, 450, 120);
+		button_ViewProfile.setOnAction(e -> {
+			new GUIReviewerProfilePage(primaryStage, theRootPane, theDatabase, theUser, theUser);
+		});
 		
-        	setupButtonUI(button_Logout, "Dialog", 18, 250, Pos.CENTER, 20, 540);
-        	button_Logout.setOnAction((event) -> {performLogout(); });
+        setupButtonUI(button_Logout, "Dialog", 18, 250, Pos.CENTER, 20, 540);
+        button_Logout.setOnAction((event) -> {performLogout(); });
         
-        	setupButtonUI(button_Quit, "Dialog", 18, 250, Pos.CENTER, 300, 540);
-       		button_Quit.setOnAction((event) -> {performQuit(); });
+        setupButtonUI(button_Quit, "Dialog", 18, 250, Pos.CENTER, 300, 540);
+        button_Quit.setOnAction((event) -> {performQuit(); });
         
         setup();
 	}
@@ -129,14 +143,46 @@ public class GUIReviewerHomePage {
 	 * content.</p>
 	 * 
 	 */
+	//adding button_CreateReview, button_ViewReviews to the setup() method
 	public void setup() {
+		QuestionGui questionGui = new QuestionGui();
+		questionGui.setOnViewSwitch(view -> {
+			questionGuiHolder.getChildren().setAll(view);
+		});
+		// creates the parent and the holder so that a scrollpane is 
+		//possible
+		Parent questionMod = null;
+		try {
+			questionMod = questionGui.getView(theDatabase);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		questionGuiHolder.getChildren().setAll(questionMod);
+		ScrollPane scrollPane = new ScrollPane(questionGuiHolder);
+		//sets the scrollpane to fit the outer window
+		 scrollPane.setFitToWidth(true);
+		    scrollPane.setFitToHeight(true);
+		    scrollPane.setPannable(true);
+		    scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+		    scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		    scrollPane.setPrefHeight(400);
+		   StackPane centerPane = new StackPane(scrollPane);
+		   //sets the location of the scrollpane
+		   centerPane.setPrefWidth(FCMainClass.WINDOW_WIDTH);
+		   centerPane.setLayoutX(0);
+		   centerPane.setLayoutY(90);
+		   centerPane.setPadding(new Insets(20));
 		theRootPane.getChildren().clear();		
-	    	theRootPane.getChildren().addAll(
-		label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
-	        button_CreateReview, button_ViewReviews,
-		line_Separator4, 
+	    theRootPane.getChildren().addAll(
+			label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
+	        line_Separator4, 
 	        button_Logout,
-	        button_Quit
+	        button_Quit,
+	        createMessageNotif(),
+	        button_ViewReviews,  
+	        button_CreateReview,
+	        button_ViewProfile     
 	    );
 			
 	}
@@ -153,6 +199,26 @@ public class GUIReviewerHomePage {
 		l.setLayoutY(y);		
 	}
 	
+	
+	private StackPane createMessageNotif() {
+		Button topMessageButton = new Button("Messages");
+		
+		topMessageButton.setOnAction(e -> {
+			MessageGUI messageGui = new MessageGUI();
+			messageGui.setOnViewSwitch(view -> {
+				questionGuiHolder.getChildren().setAll(view);
+			});
+			try {
+	            Parent messageView = messageGui.getView(theDatabase);
+	            questionGuiHolder.getChildren().setAll(messageView);  // switch to message view
+	        } catch (SQLException ex) {
+	            ex.printStackTrace();
+	        }
+	    });
+
+		    StackPane stack = new StackPane(topMessageButton);
+		return stack;
+	}
 	
 	/**********
 	 * Private local method to initialize the standard fields for a button
@@ -187,8 +253,6 @@ public class GUIReviewerHomePage {
 		else
 			GUISystemStartUpPage.theUserUpdatePage.setup();	
 	}
-
-	//Starts here
 	//This method will call the GUICreateReviewPage class
 	private void performCreateReview() {
 		if (GUISystemStartUpPage.theCreateReviewPage == null)
@@ -205,8 +269,7 @@ public class GUIReviewerHomePage {
 		else
 			GUISystemStartUpPage.theViewMyReviewsPage.setup();
 	}
-	//Ends here
-	
+
 	private void performLogout() {
 		GUISystemStartUpPage.theSystemStartupPage.setup();
 	}
