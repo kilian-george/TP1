@@ -1,5 +1,6 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,7 +68,7 @@ public class GUIAddRemoveRolesPage {
 	private Label label_SelectRoleToBeRemoved = new Label("Select a role to be removed:");
 	private ComboBox <String> combobox_SelectRoleToRemove = new ComboBox <String>();
 	
-//	private String [] roles = {"Admin", "Student", "Reviewer", "Instructor", "Staff"};
+	private String [] roles = {"Admin", "Student", "Reviewer", "Instructor", "Staff"};
 	
 	private Line line_Separator4 = new Line(20, 525, FCMainClass.WINDOW_WIDTH-20,525);
 	
@@ -111,7 +112,7 @@ public class GUIAddRemoveRolesPage {
 		theRootPane = theRoot;
 		theDatabase = database;
 		theUser = user;
-		//Just a small typo here I found while working on the admin functions
+		
 		primaryStage.setTitle("CSE 360 Foundation Code: Admin Operations Page");
 	
 		double WINDOW_WIDTH = FCMainClass.WINDOW_WIDTH;		
@@ -139,7 +140,12 @@ public class GUIAddRemoveRolesPage {
     		String oldvalue, String newValue) -> {doSelectUser();});
 	
 		setupButtonUI(button_Return, "Dialog", 18, 210, Pos.CENTER, 20, 540);
-		button_Return.setOnAction((event) -> {performReturn(); });
+		button_Return.setOnAction((event) -> {try {
+			performReturn();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} });
 
 		setupButtonUI(button_Logout, "Dialog", 18, 210, Pos.CENTER, 300, 540);
 		button_Logout.setOnAction((event) -> {performLogout(); });
@@ -358,7 +364,6 @@ public class GUIAddRemoveRolesPage {
 		if (theRemoveRole.compareTo("<Select a role>") != 0) {
 			if (theDatabase.updateUserRole(theSelectedUser, theRemoveRole, "false") ) {
 				combobox_SelectRoleToRemove = new ComboBox <String>();
-				//minor typo here on the next line. It had add instead of remove
 				combobox_SelectRoleToRemove.setItems(FXCollections.observableArrayList(removeList));
 				combobox_SelectRoleToRemove.getSelectionModel().clearAndSelect(0);		
 				setupSelectedUser();
@@ -366,7 +371,7 @@ public class GUIAddRemoveRolesPage {
 		}
 	}
 		
-	private void performReturn() {
+	private void performReturn() throws SQLException {
 		GUISystemStartUpPage.theAdminHomePage.setup();
 	}
 	
