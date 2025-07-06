@@ -1,5 +1,7 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
+
 import applicationMainMethodClasses.FCMainClass;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
@@ -45,7 +47,12 @@ public class GUISetOneTimePasswordPage {
         
         button_Back.setLayoutX(20);
         button_Back.setLayoutY(100);
-        button_Back.setOnAction((event) -> { performBack(); });
+        button_Back.setOnAction((event) -> { try {
+			performBack();
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} });
 
         setup();
     }
@@ -61,9 +68,18 @@ public class GUISetOneTimePasswordPage {
             showAlert("Error", "Username cannot be empty.");
             return;
         }
-        //Can we get it to succeed?
-        showAlert("Success", "One-time password set for user: " + username);
-        textField_Username.clear();
+
+        // This will give the user a random 6 digit code for the OTP
+        String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
+
+        boolean success = theDatabase.setOneTimePassword(username, otp);
+        if (success) {
+        	//I set an alert if it sent but it never showed up before, so this success alert should work now
+            showAlert("Success", "One-time password set for user: " + username + "\nOTP: " + otp);
+            textField_Username.clear();
+        } else {
+            showAlert("Error", "Failed to set OTP. Username may not exist.");
+        }
     }
 
     private void showAlert(String title, String msg) {
@@ -72,7 +88,7 @@ public class GUISetOneTimePasswordPage {
         alert.showAndWait();
     }
     
-    private void performBack() {
+    private void performBack() throws SQLException {
         GUISystemStartUpPage.theAdminHomePage.setup();
     }
 }
