@@ -89,7 +89,6 @@ public class GUICreateReviewPage {
         if (success) {
             showAlert("Success", "Review submitted.");
             returnToReviewerHomePage();
-          //These lines were used for testing
 //            text_TargetId.clear();
 //            textArea_Content.clear();
         } else {
