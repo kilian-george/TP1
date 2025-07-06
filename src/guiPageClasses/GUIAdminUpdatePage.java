@@ -1,8 +1,11 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
 import java.util.Optional;
 
 import applicationMainMethodClasses.FCMainClass;
+import databaseClasses.Database;
+import entityClasses.User;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -10,8 +13,6 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import databaseClasses.Database;
-import entityClasses.User;
 
 /*******
  * <p> Title: GUIAdminSetupPage Class. </p>
@@ -205,7 +206,12 @@ public class GUIAdminUpdatePage {
         
         setupButtonUI(button_ProceedToAdminHomePage, "Dialog", 18, 300, 
         		Pos.CENTER, WINDOW_WIDTH/2-150, 450);
-        button_ProceedToAdminHomePage.setOnAction((event) -> {goToAdminHomePage();});
+        button_ProceedToAdminHomePage.setOnAction((event) -> {try {
+			goToAdminHomePage();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}});
 		
         setupButtonUI(button_Logout, "Dialog", 18, 250, Pos.CENTER, 20, 520);
         button_Logout.setOnAction((event) -> {performLogout(); });
@@ -312,10 +318,11 @@ public class GUIAdminUpdatePage {
 	/**********************************************************************************************
 
 	User Interface Actions for this page
+	 * @throws SQLException 
 	
 	**********************************************************************************************/
 	
-	private void goToAdminHomePage() {
+	private void goToAdminHomePage() throws SQLException {
         // Proceed to the admin account update page
 		if (GUISystemStartUpPage.theAdminHomePage == null) {
 			GUISystemStartUpPage.theAdminHomePage = 
