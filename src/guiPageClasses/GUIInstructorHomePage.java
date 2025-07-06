@@ -160,7 +160,7 @@ public class GUIInstructorHomePage {
 			label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
 	        line_Separator4, 
 	        button_Logout,
-	        button_Quit,
+	        button_Quit, centerPane,
 	        createMessageNotif()
 	    );
 			

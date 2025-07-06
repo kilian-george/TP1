@@ -52,6 +52,7 @@ public class GUIStaffHomePage {
 	
 	private Button button_Logout = new Button("Logout");
 	private Button button_Quit = new Button("Quit");
+	private Button messageButton = new Button("messages");
 	private StackPane questionGuiHolder = new StackPane();
 	private StackPane messageGuiHolder = new StackPane();
 	private Stage primaryStage;	
@@ -159,7 +160,7 @@ public class GUIStaffHomePage {
 			label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
 	        line_Separator4, 
 	        button_Logout,
-	        button_Quit,
+	        button_Quit, centerPane,
 	        createMessageNotif()
 	    );
 			

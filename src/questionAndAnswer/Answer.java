@@ -22,6 +22,7 @@ public class Answer {
 	private int score = 0;
 	private LocalDateTime timestamp = LocalDateTime.now();
 	private List<Comment> comments = new ArrayList<>();
+	private boolean isPrivate;
 
 	/*******
 	 * <p>
@@ -41,7 +42,32 @@ public class Answer {
 		this.name = name;
 		this.answerText = answerText;
 		this.score = score;
+		this.isPrivate = false;
 	}
+	
+	/*******
+	 * <p>
+	 * Constructor: Answer
+	 * </p>
+	 * 
+	 * <p>
+	 * Description: Creates a new {@link Answer} with the specified author name,
+	 * text, and initial score.
+	 * </p>
+	 * 
+	 * @param name       the username of the person who wrote the answer.
+	 * @param answerText the content of the answer.
+	 * @param score      the initial score of the answer.
+	 * @param isPrivate  the flag to determing if answer is private.
+	 */
+	public Answer(String name, String answerText, int score, boolean isPrivate) {
+		this.name = name;
+		this.answerText = answerText;
+		this.score = score;
+		this.isPrivate = isPrivate;
+	}
+	
+
 
 	/*******
 	 * <p>
@@ -163,6 +189,10 @@ public class Answer {
 	 */
 	public String getAnswerText() {
 		return answerText;
+	}
+	
+	public boolean getIsPrivate() {
+		return this.isPrivate;
 	}
 
 	/*******

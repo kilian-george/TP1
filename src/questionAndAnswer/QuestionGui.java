@@ -256,6 +256,15 @@ public class QuestionGui {
 			answersBox.getChildren().add(new Label("nobody has answered yet"));
 		} else {
 			List<Answer> sortAnswers = new ArrayList<>(question.getAnswers());
+			
+			for (int i = 0; i < sortAnswers.size(); i++) {
+				if(sortAnswers.get(i).getIsPrivate()) {
+					// 
+					if (question.getName() != database.getCurrentUsername() && !(database.getCurrentInstructorRole() || database.getCurrentReviewerRole() || database.getCurrentStaffRole())) {
+						sortAnswers.remove(i);
+					}
+				}
+			}
 			// sorts the answers by score
 			sortAnswers.sort((a1, a2) -> {
 				// if an answer is marked as resolved then it will always be on top
@@ -272,7 +281,7 @@ public class QuestionGui {
 				VBox commentBox = commentHelper(a, question);
 				// time stamp maker
 				String answerTime = a.getTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-				Label answerLabel = new Label("*" + a.getName() + ":" + a.getAnswerText() + " (" + answerTime + ")");
+				Label answerLabel = new Label("*" + a.getName() + ": " + a.getAnswerText() + " (" + answerTime + ")");
 				answerLabel.setWrapText(true);
 				// creates the labels for score
 				Label scoreLabel = new Label("score: " + a.getScore());
@@ -559,10 +568,19 @@ public class QuestionGui {
 		newAnswer.setPrefRowCount(5);
 
 		// button functionality
+		
+		boolean privateCapable = (database.getCurrentInstructorRole() || database.getCurrentReviewerRole() || database.getCurrentStaffRole()); 
+		
 		Button submitButton = new Button("Submit");
 		submitButton.setOnAction(e -> {
 			// gets the text of the answer given to the question
-			addAnswer(current, database.getCurrentUsername(), newAnswer.getText());
+			
+			if(newAnswer.getText().contains("*private*") && privateCapable) {
+				addAnswer(current, database.getCurrentUsername(), newAnswer.getText(), true);
+			}
+			else { 
+				addAnswer(current, database.getCurrentUsername(), newAnswer.getText(), false);
+			}
 			List<Question> updatebank = database.getAllQuestions();
 			// filters the questions so they are updated or otherwise just puts the current
 			// one in first
@@ -593,11 +611,15 @@ public class QuestionGui {
 	 * @param name       The name of the user submitting the answer
 	 * @param answerText text of the answer
 	 */
-	private void addAnswer(Question current, String name, String answerText) {
+	public void addAnswer(Question current, String name, String answerText, boolean isPrivate) {
 		// if all fields are filled
 		if (name != null && !name.isEmpty() && answerText != null && !answerText.isEmpty()) {
 			// adds a new answer to the database
-			Answer ans = new Answer(name, answerText, 0);
+			if (isPrivate) {
+				int n1 = answerText.lastIndexOf('*');
+				answerText = answerText.substring(n1 + 1);
+			}
+			Answer ans = new Answer(name, answerText, 0, isPrivate);
 			current.addAnswer(ans);
 			database.saveAnswer(ans, current.getId());
 		} else {
@@ -605,6 +627,7 @@ public class QuestionGui {
 			alert.showAndWait();
 		}
 	}
+
 
 	/**********
 	 * <p>

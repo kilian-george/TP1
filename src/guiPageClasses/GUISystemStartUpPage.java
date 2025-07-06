@@ -556,6 +556,7 @@ public class GUISystemStartUpPage {
     		alertUsernamePasswordError.showAndWait();
     		return;
     	}
+    	database.getUserAccountDetails(username);
     	
 		int numberOfRoles = database.getNumberOfRoles(user);		
 		if (numberOfRoles == 1) {
@@ -741,6 +742,8 @@ public class GUISystemStartUpPage {
                 	System.out.println("Updating user; " + username + " email address to: "+ emailAddress);
                 	database.updateEmailAddress(username, emailAddress);
                 }
+                
+                database.getUserAccountDetails(username);
                 // Navigate to the Welcome Login Page
                 if (theUserUpdatePage == null)
                 	theUserUpdatePage = 

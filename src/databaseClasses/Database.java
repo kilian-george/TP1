@@ -104,6 +104,25 @@ public class Database {
 		}
 	}
 
+
+	public void dropDatabase() {
+	    try (Statement stmt = connection.createStatement()) {
+	        // Drop all tables
+	        stmt.executeUpdate("DROP TABLE IF EXISTS InvitationCodes");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS userDB");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS Questions");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS Answers");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS Comments");
+	        stmt.executeUpdate("DROP TABLE IF EXISTS Message");
+
+	        // Recreate tables fresh
+	        createTables();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	
 	
 /*******
  * <p> Method: createTables </p>
@@ -111,7 +130,7 @@ public class Database {
  * <p> Description: Used to create new instances of the two database tables used by this class.</p>
  * 
  */
-	private void createTables() throws SQLException {
+	public void createTables() throws SQLException {
 		// Create the user database
 		String userTable = "CREATE TABLE IF NOT EXISTS userDB ("
 				+ "id INT AUTO_INCREMENT PRIMARY KEY, "
@@ -153,7 +172,8 @@ public class Database {
 	    	    +"username VARCHAR(255),"
 	    	    + "answerText TEXT, "
 	    	    + "score INT,"
-	    	    + "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE)";
+	    	    + "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE,"
+	    		+ "isPrivate BOOLEAN)";
 	    	statement.execute(answersTable);
 	    	
 
@@ -171,7 +191,8 @@ public class Database {
 	    		+"sender VARCHAR(18),"
 	    		+"receiver VARCHAR(18),"
 	    		+"message VARCHAR(240),"
-	    		+"timestamp VARCHAR(25)"
+	    		+"timestamp VARCHAR(32),"
+	    		+"is_read BOOLEAN"
 	    		+")";
 	    		statement.execute(messageTable);
 
@@ -225,7 +246,8 @@ public class Database {
 	            String username = rs.getString("username");
 	            String answerText = rs.getString("answerText");
 	            int score = rs.getInt("score");
-	            answers.add(new Answer(username, answerText, score));
+	            boolean isPrivate = rs.getBoolean("isPrivate");
+	            answers.add(new Answer(username, answerText, score, isPrivate));
 	        }
 	    } catch (SQLException e) {
 	        e.printStackTrace();
@@ -267,11 +289,12 @@ public class Database {
 	}
 	
 	public void saveAnswer(Answer answer, int questionId) {
-	    String insert = "INSERT INTO Answers (questionId, username, answerText) VALUES (?, ?, ?)";
+	    String insert = "INSERT INTO Answers (questionId, username, answerText, isPrivate) VALUES (?, ?, ?, ?)";
 	    try (PreparedStatement pstmt = connection.prepareStatement(insert)) {
 	        pstmt.setInt(1, questionId);
 	        pstmt.setString(2, answer.getName());
 	        pstmt.setString(3, answer.getAnswerText());
+	        pstmt.setBoolean(4, answer.getIsPrivate());
 	        pstmt.executeUpdate();
 	    } catch (SQLException e) {
 	        e.printStackTrace();
