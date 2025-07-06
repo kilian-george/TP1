@@ -140,26 +140,6 @@ public class GUIUserUpdatePage {
         setupLabelUI(label_Password, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 150);
         setupLabelUI(label_CurrentPassword, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 150);
         setupButtonUI(button_UpdatePassword, "Dialog", 18, 275, Pos.CENTER, 500, 143);
-	//I thought there was a section in the task that said to set an updatePassword button, but I could be wrong, so this can be ignored if anything
-		// button_UpdatePassword.setOnAction((event) -> {
- //            result = dialogUpdatePassword.showAndWait();
- //            result.ifPresent(password -> {
- //                if (!PasswordEvaluator.isValid(password)) {
- //                    showAlert("Invalid password. Password must be at least 8 characters and contain a digit.");
- //                    return;
- //                }
- //                theDatabase.updatePassword(theUser.getUserName(), password);
- //                theDatabase.getUserAccountDetails(theUser.getUserName());
- //                String newPassword = theDatabase.getCurrentPassword();
- //                if (newPassword == null || newPassword.length() < 1)
- //                    label_CurrentPassword.setText("<none>");
- //                else
- //                    label_CurrentPassword.setText("*".repeat(newPassword.length()));
- //                //This should show asteriks to hide the currentPassword
- //                //I could also implement a alert to say password update
- //               // showSuccessAlert("Password updated sucessfully.");
- //            });
- //        });
         
         setupLabelUI(label_FirstName, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 200);
         setupLabelUI(label_CurrentFirstName, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 200);
@@ -222,7 +202,12 @@ public class GUIUserUpdatePage {
         
         setupButtonUI(button_ProceedToUserHomePage, "Dialog", 18, 300, 
         		Pos.CENTER, WINDOW_WIDTH/2-150, 450);
-        button_ProceedToUserHomePage.setOnAction((event) -> {goToUserHomePage();});
+        button_ProceedToUserHomePage.setOnAction((event) -> {try {
+			goToUserHomePage();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}});
         
         
 		String newName = theDatabase.getCurrentUsername();
@@ -329,11 +314,12 @@ public class GUIUserUpdatePage {
 	/**********************************************************************************************
 
 	User Interface Actions for this page
+	 * @throws SQLException 
 	
 	**********************************************************************************************/
 	
 
-	private void goToUserHomePage() {
+	private void goToUserHomePage() throws SQLException {
 		theRootPane.getChildren().clear();
 		switch (FCMainClass.activeHomePage) {
 		case 1:
@@ -375,11 +361,15 @@ public class GUIUserUpdatePage {
 				GUISystemStartUpPage.theInstructorHomePage.setup();
 			break;
 		case 5: 
-			if (GUISystemStartUpPage.theStaffHomePage == null)
-				GUISystemStartUpPage.theStaffHomePage = 
-					new GUIStaffHomePage(thePrimaryStage, theRootPane, theDatabase, theUser);
-			else
-			GUISystemStartUpPage.theStaffHomePage.setup();
+			try {
+				if (GUISystemStartUpPage.theStaffHomePage == null)
+					GUISystemStartUpPage.theStaffHomePage = 
+						new GUIStaffHomePage(thePrimaryStage, theRootPane, theDatabase, theUser);
+				else
+					GUISystemStartUpPage.theStaffHomePage.setup();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 			break;
 		}
  	}
