@@ -1,5 +1,7 @@
 package guiPageClasses;
 
+import java.sql.SQLException;
+
 import applicationMainMethodClasses.FCMainClass;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
@@ -44,16 +46,24 @@ public class GUIDeleteUserPage {
 
         button_Back.setLayoutX(20);
         button_Back.setLayoutY(180);
-        button_Back.setOnAction(e -> performBack());
+        button_Back.setOnAction(e -> {
+			try {
+				performBack();
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
 
         setup();
     }
 
     public void setup() {
         theRootPane.getChildren().clear();
-        //If there is still issues popping up with the user deletion, I will add a function here later that may help 
+        
         theRootPane.getChildren().addAll(label_PageTitle, label_Username, textField_Username, button_Delete, button_Back);
     }
+
 
     private void deleteUser() {
         String username = textField_Username.getText().trim();
@@ -62,7 +72,7 @@ public class GUIDeleteUserPage {
             return;
         }
 
-        // Shows a confirmation alert if we succeeded in deleting a user
+        // Sends an alert to let us know if a user was successfully deleted
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete user: " + username + "?", ButtonType.YES, ButtonType.NO);
         confirm.showAndWait();
 
@@ -80,14 +90,14 @@ public class GUIDeleteUserPage {
             }
         }
     }
-
+    
     private void showAlert(String title, String msg) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
         alert.setTitle(title);
         alert.showAndWait();
     }
 
-    private void performBack() {
+    private void performBack() throws SQLException {
         GUISystemStartUpPage.theAdminHomePage.setup();
     }
 }
