@@ -1,35 +1,23 @@
 package guiPageClasses;
 
-import java.util.ArrayList;
-import java.util.List;
-
-//import java.util.Optional;
+import java.sql.SQLException;
+import java.util.Optional;
 
 import applicationMainMethodClasses.FCMainClass;
-import javafx.collections.FXCollections;
-import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-//
-//import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
-//import javafx.scene.control.TextInputDialog;
-//import javafx.scene.control.TextField;
-//import javafx.scene.control.TextField;
-import javafx.scene.layout.Pane;
-import javafx.scene.shape.Line;
-import javafx.scene.text.Font;
-import javafx.stage.Stage;
 import databaseClasses.Database;
 import entityClasses.User;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.Pane;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
 
 /*******
- * <p> Title: GUIAdminHomePage Class. </p>
+ * <p> Title: GUIAdminSetupPage Class. </p>
  * 
- * <p> Description: The Java/FX-based Admin Home Page.</p>
+ * <p> Description: The Java/FX-based Admin Update Page.</p>
  * 
  * <p> Copyright: Lynn Robert Carter © 2025 </p>
  * 
@@ -39,7 +27,7 @@ import entityClasses.User;
  *  
  */
 
-public class GUIAdminHomePage {
+public class GUIAdminUpdatePage {
 	
 	/**********************************************************************************************
 
@@ -48,45 +36,45 @@ public class GUIAdminHomePage {
 	**********************************************************************************************/
 	
 	// These are the application values required by the user interface
-	private Label label_PageTitle = new Label();
-	private Label label_UserDetails = new Label();
-	private Button button_UpdateThisUser = new Button("Account Update");
+	private Label label_ApplicationTitle = new Label("Admin Account Details Update Page");
+    private Label label_Purpose = 
+    		new Label(" Use this page to define or update your account information."); 
+	private Label label_Username = new Label("Username:");
+	private Label label_Password = new Label("Password:");
+	private Label label_FirstName = new Label("First Name:");
+	private Label label_MiddleName = new Label("Middle Name:");
+	private Label label_LastName = new Label("Last Name:");
+	private Label label_PreferredFirstName = new Label("Preferred First Name:");
+	private Label label_EmailAddress = new Label("Email Address:");
+	
+	private Label label_CurrentUsername = new Label();
+	private Label label_CurrentPassword = new Label();
+	private Label label_CurrentFirstName = new Label();
+	private Label label_CurrentMiddleName = new Label();
+	private Label label_CurrentLastName = new Label();
+	private Label label_CurrentPreferredFirstName = new Label();
+	private Label label_CurrentEmailAddress = new Label();
+	
+	private Button button_UpdatePassword = new Button("Update Password");
+	private Button button_UpdateFirstName = new Button("Update First Name");
+	private Button button_UpdateMiddleName = new Button("Update Middle Name");
+	private Button button_UpdateLastName = new Button("Update Last Name");
+	private Button button_UpdatePreferredFirstName = new Button("Update Preferred First Name");
+	private Button button_UpdateEmailAddress = new Button("Update Email Address");
 
+	private Button button_ProceedToAdminHomePage = new Button("Proceed to the Admin Home Page");
 	
-	private Line line_Separator1 = new Line(20, 95, FCMainClass.WINDOW_WIDTH-20, 95);
 
-	private Label label_NumberOfInvitations = new Label("Number of Oustanding Invitations: x");
-	private Label label_NumberOfUsers = new Label("Number of Users: x");
-	
-	private Line line_Separator2 = new Line(20, 165, FCMainClass.WINDOW_WIDTH-20, 165);
-	
-	private Label label_Invitations = new Label("Send An Invitation");
-	private Label label_InvitationEmailAddress = new Label("Email Address");
-	private TextField text_InvitationEmailAddress = new TextField();
-	private ComboBox <String> combobox_SelectRole = new ComboBox <String>();
-	private String [] roles = {"Admin", "Student", "Reviewer", "Instructor", "Staff"};
-	private Button button_SendInvitation = new Button("Send Invitation");
-    private Alert alertEmailError = new Alert(AlertType.INFORMATION);
-    private Alert alertEmailSent = new Alert(AlertType.INFORMATION);
-	private Button button_ManageInvitations = new Button("Manage Invitations");
-	private Button button_SetOnetimePassword = new Button("Set a One-Time Password");
-	private Button button_DeleteUser = new Button("Delete a User");
-	private Button button_ListUsers = new Button("List All Users");
-	private Button button_AddRemoveRoles = new Button("Add/Remove Roles");
-    private Alert alertNotImplemented = new Alert(AlertType.INFORMATION);
-	
-	private Line line_Separator3 = new Line(20, 255, FCMainClass.WINDOW_WIDTH-20, 255);
-	
-	private Line line_Separator4 = new Line(20, 525, FCMainClass.WINDOW_WIDTH-20,525);
-	
 	private Button button_Logout = new Button("Logout");
 	private Button button_Quit = new Button("Quit");
 
-	
-	private Stage primaryStage;	
+	private Stage thePrimaryStage;
 	private Pane theRootPane;
 	private Database theDatabase;
 	private User theUser;
+	
+	
+	Optional<String> result;
 
 
 	/**********************************************************************************************
@@ -97,9 +85,9 @@ public class GUIAdminHomePage {
 
 	
 	/**********
-	 * <p> Method: GUIAdminHomePage(Stage ps, Pane theRoot, Database database, User user) </p>
+	 * <p> Method: GUIAdminUpdatePage(Stage ps, Pane theRoot, Database database, User user) </p>
 	 * 
-	 * <p> Description: This method initializes all the elements of the graphical user interface.
+	 * <p> Description: This method initializes all the elements of the graphical user interface
 	 * This method determines the location, size, font, color, and change and event handlers for
 	 * each GUI object. </p>
 	 * 
@@ -113,115 +101,174 @@ public class GUIAdminHomePage {
 	 * 
 	 */
 	@SuppressWarnings("unused")
-	public GUIAdminHomePage(Stage ps, Pane theRoot, Database database, User user) {
-		GUISystemStartUpPage.theAdminHomePage = this;
-		
-		FCMainClass.activeHomePage = 1;
-		
-		primaryStage = ps;
+	public GUIAdminUpdatePage(Stage ps, Pane theRoot, Database database, User user) {
+		thePrimaryStage = ps;
 		theRootPane = theRoot;
 		theDatabase = database;
 		theUser = user;
 		
-		primaryStage.setTitle("CSE 360 Foundation Code: Admin Home Page");
-	
-		double WINDOW_WIDTH = FCMainClass.WINDOW_WIDTH;		
-
-		// Label the window with the title and other common titles and buttons
-	
-		label_PageTitle.setText("Admin Home Page");
-		setupLabelUI(label_PageTitle, "Arial", 28, WINDOW_WIDTH, Pos.CENTER, 0, 5);
-
-		label_UserDetails.setText("User: " + user.getUserName());
-		setupLabelUI(label_UserDetails, "Arial", 20, WINDOW_WIDTH, Pos.BASELINE_LEFT, 20, 55);
+		thePrimaryStage.setTitle("CSE 360 Foundation Code: Admin User Details Update Page");
 		
-		setupButtonUI(button_UpdateThisUser, "Dialog", 18, 170, Pos.CENTER, 610, 45);
-		button_UpdateThisUser.setOnAction((event) -> {performUpdate(); });
-	
-		setupButtonUI(button_Logout, "Dialog", 18, 250, Pos.CENTER, 20, 540);
-		button_Logout.setOnAction((event) -> {performLogout(); });
-    
-		setupButtonUI(button_Quit, "Dialog", 18, 250, Pos.CENTER, 300, 540);
-		button_Quit.setOnAction((event) -> {performQuit(); });
+		double WINDOW_WIDTH = FCMainClass.WINDOW_WIDTH;
+
+		TextInputDialog dialogUpdateFirstName = new TextInputDialog();
+		dialogUpdateFirstName.setTitle("Update First Name");
+		dialogUpdateFirstName.setHeaderText("Update your First Name");
 		
-		setupLabelUI(label_NumberOfInvitations, "Arial", 20, 200, Pos.BASELINE_LEFT, 20, 105);
-		label_NumberOfInvitations.setText("Number of outstanding invitations: " + 
-				theDatabase.getNumberOfInvitations());
-	
-		setupLabelUI(label_NumberOfUsers, "Arial", 20, 200, Pos.BASELINE_LEFT, 20, 135);
-		label_NumberOfUsers.setText("Number of users: " + 
-				theDatabase.getNumberOfUsers());
-	
-	
-		setupLabelUI(label_Invitations, "Arial", 20, WINDOW_WIDTH, Pos.BASELINE_LEFT, 20, 175);
-	
-		setupLabelUI(label_InvitationEmailAddress, "Arial", 16, WINDOW_WIDTH, Pos.BASELINE_LEFT,
-		20, 210);
-	
-		setupTextUI(text_InvitationEmailAddress, "Arial", 16, 360, Pos.BASELINE_LEFT,
-		130, 205, true);
-	
-		setupComboBoxUI(combobox_SelectRole, "Dialog", 16, 90, 500, 205);
-	
-		List<String> list = new ArrayList<String>();	// Create a new list empty list
-		for (int i = 0; i < roles.length; i++) {
-			list.add(roles[i]);
-		}
-		combobox_SelectRole.setItems(FXCollections.observableArrayList(list));
-		combobox_SelectRole.getSelectionModel().select(0);
-		alertEmailSent.setTitle("Invitation");
-		alertEmailSent.setHeaderText("Invitation was sent");
-
-		setupButtonUI(button_SendInvitation, "Dialog", 16, 150, Pos.CENTER, 630, 205);
-		button_SendInvitation.setOnAction((event) -> {performInvitation(); });
-	
-		setupButtonUI(button_ManageInvitations, "Dialog", 16, 250, Pos.CENTER, 20, 270);
-		button_ManageInvitations.setOnAction((event) -> {manageInvitations(); });
-	
-		setupButtonUI(button_SetOnetimePassword, "Dialog", 16, 250, Pos.CENTER, 20, 320);
-		button_SetOnetimePassword.setOnAction((event) -> {setOnetimePassword(); });
-
-		setupButtonUI(button_DeleteUser, "Dialog", 16, 250, Pos.CENTER, 20, 370);
-		button_DeleteUser.setOnAction((event) -> {deleteUser(); });
-
-		setupButtonUI(button_ListUsers, "Dialog", 16, 250, Pos.CENTER, 20, 420);
-		button_ListUsers.setOnAction((event) -> {listUser(); });
-
-		setupButtonUI(button_AddRemoveRoles, "Dialog", 16, 250, Pos.CENTER, 20, 470);
-		button_AddRemoveRoles.setOnAction((event) -> {addRemoveRoles(); });
+		TextInputDialog dialogUpdateMiddleName = new TextInputDialog("");
+		dialogUpdateMiddleName.setTitle("Update Middle Name");
+		dialogUpdateMiddleName.setHeaderText("Update your Middle Name");
 		
-		// Place all of the items into the Root Pane
-		setup();
+		TextInputDialog dialogUpdateLastName = new TextInputDialog("");
+		dialogUpdateLastName.setTitle("Update Last Name");
+		dialogUpdateLastName.setHeaderText("Update your Last Name");
+		
+		TextInputDialog dialogUpdatePreferredFirstName = new TextInputDialog("");
+		dialogUpdatePreferredFirstName.setTitle("Update Preferred First Name");
+		dialogUpdatePreferredFirstName.setHeaderText("Update your Preferred First Name");
+		
+		TextInputDialog dialogUpdateEmailAddresss = new TextInputDialog("");
+		dialogUpdateEmailAddresss.setTitle("Update Email Address");
+		dialogUpdateEmailAddresss.setHeaderText("Update your Email Address");
+
+		// Label theScene with the name of the startup screen, centered at the top of the pane
+		setupLabelUI(label_ApplicationTitle, "Arial", 28, WINDOW_WIDTH, Pos.CENTER, 0, 5);
+
+        // Label to display the welcome message for the first user
+        setupLabelUI(label_Purpose, "Arial", 20, WINDOW_WIDTH, Pos.CENTER, 0, 50);
+        
+        // Display the titles, values, and update buttons for the various admin account attributes
+        setupLabelUI(label_Username, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 100);
+        setupLabelUI(label_CurrentUsername, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 100);
+        
+        setupLabelUI(label_Password, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 150);
+        setupLabelUI(label_CurrentPassword, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 150);
+        setupButtonUI(button_UpdatePassword, "Dialog", 18, 275, Pos.CENTER, 500, 143);
+        
+        setupLabelUI(label_FirstName, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 200);
+        setupLabelUI(label_CurrentFirstName, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 200);
+        setupButtonUI(button_UpdateFirstName, "Dialog", 18, 275, Pos.CENTER, 500, 193);
+        button_UpdateFirstName.setOnAction((event) -> {result = dialogUpdateFirstName.showAndWait();
+        	result.ifPresent(name -> database.updateFirstName(theUser.getUserName(), result.get()));
+    		database.getUserAccountDetails(theUser.getUserName());
+        	String newName = database.getCurrentFirstName();
+        	if (newName == null || newName.length() < 1)label_CurrentFirstName.setText("<none>");
+        	else label_CurrentFirstName.setText(newName);
+        	});
+               
+        setupLabelUI(label_MiddleName, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 250);
+        setupLabelUI(label_CurrentMiddleName, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 250);
+        setupButtonUI(button_UpdateMiddleName, "Dialog", 18, 275, Pos.CENTER, 500, 243);
+        button_UpdateMiddleName.setOnAction((event) -> {result = dialogUpdateMiddleName.showAndWait();
+    		result.ifPresent(name -> database.updateMiddleName(theUser.getUserName(), result.get()));
+    		database.getUserAccountDetails(theUser.getUserName());
+    		String newName = database.getCurrentMiddleName();
+        	if (newName == null || newName.length() < 1)label_CurrentMiddleName.setText("<none>");
+        	else label_CurrentMiddleName.setText(newName);
+    		});
+        
+        setupLabelUI(label_LastName, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 300);
+        setupLabelUI(label_CurrentLastName, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 300);
+        setupButtonUI(button_UpdateLastName, "Dialog", 18, 275, Pos.CENTER, 500, 293);
+        button_UpdateLastName.setOnAction((event) -> {result = dialogUpdateLastName.showAndWait();
+    		result.ifPresent(name -> database.updateLastName(theUser.getUserName(), result.get()));
+    		database.getUserAccountDetails(theUser.getUserName());
+    		String newName = database.getCurrentLastName();
+        	if (newName == null || newName.length() < 1)label_CurrentLastName.setText("<none>");
+        	else label_CurrentLastName.setText(newName);
+    		});
+        
+        setupLabelUI(label_PreferredFirstName, "Arial", 18, 190, Pos.BASELINE_RIGHT, 
+        		5, 350);
+        setupLabelUI(label_CurrentPreferredFirstName, "Arial", 18, 260, Pos.BASELINE_LEFT, 
+        		200, 350);
+        setupButtonUI(button_UpdatePreferredFirstName, "Dialog", 18, 275, Pos.CENTER, 500, 343);
+        button_UpdatePreferredFirstName.setOnAction((event) -> 
+        	{result = dialogUpdatePreferredFirstName.showAndWait();
+    		result.ifPresent(name -> 
+    			database.updatePreferredFirstName(theUser.getUserName(), result.get()));
+    		database.getUserAccountDetails(theUser.getUserName());
+    		String newName = database.getCurrentPreferredFirstName();
+        	if (newName == null || newName.length() < 1)label_CurrentPreferredFirstName.setText("<none>");
+        	else label_CurrentPreferredFirstName.setText(newName);
+    		});
+        
+        setupLabelUI(label_EmailAddress, "Arial", 18, 190, Pos.BASELINE_RIGHT, 5, 400);
+        setupLabelUI(label_CurrentEmailAddress, "Arial", 18, 260, Pos.BASELINE_LEFT, 200, 400);
+        setupButtonUI(button_UpdateEmailAddress, "Dialog", 18, 275, Pos.CENTER, 500, 393);
+        button_UpdateEmailAddress.setOnAction((event) -> {result = dialogUpdateEmailAddresss.showAndWait();
+    		result.ifPresent(name -> database.updateEmailAddress(theUser.getUserName(), result.get()));
+    		database.getUserAccountDetails(theUser.getUserName());
+    		String newName = database.getCurrentEmailAddress();
+        	if (newName == null || newName.length() < 1)label_CurrentEmailAddress.setText("<none>");
+        	else label_CurrentEmailAddress.setText(newName);
+    		});
+        
+        setupButtonUI(button_ProceedToAdminHomePage, "Dialog", 18, 300, 
+        		Pos.CENTER, WINDOW_WIDTH/2-150, 450);
+        button_ProceedToAdminHomePage.setOnAction((event) -> {try {
+			goToAdminHomePage();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}});
+		
+        setupButtonUI(button_Logout, "Dialog", 18, 250, Pos.CENTER, 20, 520);
+        button_Logout.setOnAction((event) -> {performLogout(); });
+        
+        setupButtonUI(button_Quit, "Dialog", 18, 250, Pos.CENTER, 300, 520);
+        button_Quit.setOnAction((event) -> {performQuit(); });
+
+
+
+        // Place all of the just-initialized GUI elements into the pane
+        theRoot.getChildren().clear();
+        theRoot.getChildren().addAll(label_ApplicationTitle, label_Purpose, label_Username,
+        		label_CurrentUsername, 
+        		label_Password, label_CurrentPassword, button_UpdatePassword, 
+        		label_FirstName, label_CurrentFirstName, button_UpdateFirstName,
+        		label_MiddleName, label_CurrentMiddleName, button_UpdateMiddleName,
+        		label_LastName, label_CurrentLastName, button_UpdateLastName,
+        		label_PreferredFirstName, 
+        		label_CurrentPreferredFirstName, button_UpdatePreferredFirstName, 
+        		label_EmailAddress, button_UpdateEmailAddress,
+        		label_CurrentEmailAddress, 
+        		button_ProceedToAdminHomePage,
+        		button_Logout,
+        		button_Quit
+        		);
+        
+        // Check database actions
+        
+		database.getUserAccountDetails(theUser.getUserName());
+		String newName = database.getCurrentUsername();
+    	if (newName==null || newName.length() < 1)label_CurrentUsername.setText("<none>");
+    	else label_CurrentUsername.setText(newName);
+    	
+		newName = database.getCurrentPassword();
+    	if (newName==null || newName.length() < 1)label_CurrentPassword.setText("<none>");
+    	else label_CurrentPassword.setText(newName);
+    	
+		newName = database.getCurrentFirstName();
+    	if (newName==null || newName.length() < 1)label_CurrentFirstName.setText("<none>");
+    	else label_CurrentFirstName.setText(newName);
+
+		newName = database.getCurrentMiddleName();
+    	if (newName==null || newName.length() < 1)label_CurrentMiddleName.setText("<none>");
+    	else label_CurrentMiddleName.setText(newName);
+
+		newName = database.getCurrentLastName();
+    	if (newName==null || newName.length() < 1)label_CurrentLastName.setText("<none>");
+    	else label_CurrentLastName.setText(newName);
+    	
+		newName = database.getCurrentPreferredFirstName();
+    	if (newName==null || newName.length() < 1)label_CurrentPreferredFirstName.setText("<none>");
+    	else label_CurrentPreferredFirstName.setText(newName);
+    	
+		newName = database.getCurrentEmailAddress();
+    	if (newName==null || newName.length() < 1)label_CurrentEmailAddress.setText("<none>");
+    	else label_CurrentEmailAddress.setText(newName);
 	}
-
-	
-	/**********
-	 * <p> Method: setup() </p>
-	 * 
-	 * <p> Description: This method is called to reset the page and then populate it with new
-	 * content.</p>
-	 * 
-	 */
-	public void setup() {
-		theRootPane.getChildren().clear();
-		theRootPane.getChildren().addAll(
-			label_PageTitle, label_UserDetails, button_UpdateThisUser, line_Separator1,
-    		label_NumberOfInvitations, label_NumberOfUsers,
-    		line_Separator2,
-    		label_Invitations, 
-    		label_InvitationEmailAddress, text_InvitationEmailAddress,
-    		combobox_SelectRole, button_SendInvitation, line_Separator3,
-    		button_ManageInvitations,
-    		button_SetOnetimePassword,
-    		button_DeleteUser,
-    		button_ListUsers,
-    		button_AddRemoveRoles,
-    		line_Separator4, 
-    		button_Logout,
-    		button_Quit
-    		);
-	}	
- 	
 	
 	/**********
 	 * Private local method to initialize the standard fields for a label
@@ -257,7 +304,7 @@ public class GUIAdminHomePage {
 
 	/**********
 	 * Private local method to initialize the standard fields for a text field
-	 */
+	 *
 	private void setupTextUI(TextField t, String ff, double f, double w, Pos p, double x, double y, boolean e){
 		t.setFont(Font.font(ff, f));
 		t.setMinWidth(w);
@@ -267,122 +314,31 @@ public class GUIAdminHomePage {
 		t.setLayoutY(y);		
 		t.setEditable(e);
 	}	
-
-	
-	/**********
-	 * Private local method to initialize the standard fields for a ComboBox
-	 * 
-	 * @param c		The ComboBox object to be initialized
-	 * @param ff	The font to be used
-	 * @param f		The size of the font to be used
-	 * @param w		The width of the ComboBox
-	 * @param x		The location from the left edge (x axis)
-	 * @param y		The location from the top (y axis)
-	 */
-	private void setupComboBoxUI(ComboBox <String> c, String ff, double f, double w, double x, double y){
-		c.setStyle("-fx-font: " + f + " " + ff + ";");
-		c.setMinWidth(w);
-		c.setLayoutX(x);
-		c.setLayoutY(y);
-	}
 	
 	/**********************************************************************************************
 
 	User Interface Actions for this page
+	 * @throws SQLException 
 	
 	**********************************************************************************************/
 	
-	private void performUpdate () {
-		theRootPane.getChildren().clear();
-		new GUIUserUpdatePage(primaryStage, theRootPane, theDatabase, theUser);
-	}
-	
-	private void performInvitation () {
-		String emailAddress = text_InvitationEmailAddress.getText();
-		if (invalidEmailAddress(emailAddress)) {
-			return;
+	private void goToAdminHomePage() throws SQLException {
+        // Proceed to the admin account update page
+		if (GUISystemStartUpPage.theAdminHomePage == null) {
+			GUISystemStartUpPage.theAdminHomePage = 
+					new GUIAdminHomePage(thePrimaryStage, theRootPane, theDatabase, theUser);
 		}
-		System.out.println("The email address in question is: " + emailAddress);
-		if (theDatabase.emailaddressHasBeenUsed(emailAddress)) {
-			alertEmailError.setContentText("An invitation has already been sent to this email address.");
-			alertEmailError.showAndWait();
-			return;
-		}
-		String theSelectedRole = (String) combobox_SelectRole.getValue();
-		String invitationCode = theDatabase.generateInvitationCode(emailAddress, theSelectedRole);
-		String msg = "Code: " + invitationCode + " for role " + theSelectedRole + 
-				" was sent to: " + emailAddress;
-		System.out.println(msg);
-		alertEmailSent.setContentText(msg);
-		alertEmailSent.showAndWait();
-		text_InvitationEmailAddress.setText("");
-		int numberOfInvitations;
-		numberOfInvitations = theDatabase.getNumberOfInvitations();
-		label_NumberOfInvitations.setText("Number of outstanding invitations: " + numberOfInvitations);
-	}
-		//In each method from "manageInvitations(){...}" to "listUser(){...}"you can delete the entire section and add the corresponding commented code
-	private void manageInvitations () {
-		System.out.println("\n*** WARNING ***: Manage Invitations Not Yet Implemented");
-		alertNotImplemented.setTitle("*** WARNING ***");
-		alertNotImplemented.setHeaderText("Manage Invitations Issue");
-		alertNotImplemented.setContentText("Manage Invitations Not Yet Implemented");
-		alertNotImplemented.showAndWait();
-		// theRootPane.getChildren().clear();
-		// new GUIManageInvitationPage(primaryStage, theRootPane, theDatabase, theUser);
+		else	
+			GUISystemStartUpPage.theAdminHomePage.setup();
 	}
 	
-	private void setOnetimePassword () {
-		System.out.println("\n*** WARNING ***: One-Time Password Not Yet Implemented");
-		alertNotImplemented.setTitle("*** WARNING ***");
-		alertNotImplemented.setHeaderText("One-Time Password Issue");
-		alertNotImplemented.setContentText("One-Time Password Not Yet Implemented");
-		alertNotImplemented.showAndWait();
-		// theRootPane.getChildren().clear();
-		// new GUISetOneTimePasswordPage(primaryStage, theRootPane, theDatabase, theUser);
-	}
-	
-	private void deleteUser() {
-		System.out.println("\n*** WARNING ***: Delete User Not Yet Implemented");
-		alertNotImplemented.setTitle("*** WARNING ***");
-		alertNotImplemented.setHeaderText("Delete User Issue");
-		alertNotImplemented.setContentText("Delete User Not Yet Implemented");
-		alertNotImplemented.showAndWait();
-		//theRootPane.getChildren().clear();
-		//new GUIDeleteUserPage(primaryStage, theRootPane, theDatabase, theUser);
-	}
-	
-	private void listUser() {
-		System.out.println("\n*** WARNING ***: List Users Not Yet Implemented");
-		alertNotImplemented.setTitle("*** WARNING ***");
-		alertNotImplemented.setHeaderText("List User Issue");
-		alertNotImplemented.setContentText("List Users Not Yet Implemented");
-		alertNotImplemented.showAndWait();
-		// theRootPane.getChildren().clear();
-		// new GUIListUsersPage(primaryStage, theRootPane, theDatabase, theUser);
-		}
-//They were sorta similar to the GUIAddRemoveRolesPage.java class but the call method is the same, as long as you have the class name right it should work
-	
-	
-	private void addRemoveRoles() {
-		theRootPane.getChildren().clear();
-		new GUIAddRemoveRolesPage(primaryStage, theRootPane, theDatabase, theUser);
-	}
-
-	
-	private boolean invalidEmailAddress(String emailAddress) {
-		if (emailAddress.length() == 0) {
-			alertEmailError.setContentText("Correct the email address and try again.");
-			alertEmailError.showAndWait();
-			return true;
-		}
-		return false;
-	}
-
 	private void performLogout() {
 		GUISystemStartUpPage.theSystemStartupPage.setup();
 	}
+
 	
 	private void performQuit() {
+		System.out.println("Perform Quit");
 		System.exit(0);
 	}
 
