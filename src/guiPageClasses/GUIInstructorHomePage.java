@@ -36,6 +36,8 @@ public class GUIInstructorHomePage {
 	private Label label_PageTitle = new Label();
 	private Label label_UserDetails = new Label();
 	private Button button_UpdateThisUser = new Button("Account Update");
+    private Button button_SubmitRequest = new Button("Submit Admin Request");
+
 
 	
 	private Line line_Separator1 = new Line(20, 95, FCMainClass.WINDOW_WIDTH-20, 95);

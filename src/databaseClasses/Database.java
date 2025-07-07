@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import entityClasses.AdminRequest;
 import entityClasses.User;
 import privateMessages.Message;
 import questionAndAnswer.Answer;
@@ -172,6 +174,17 @@ public class Database {
 				+ "sender VARCHAR(100) NOT NULL, " + "receiver VARCHAR(100) NOT NULL, " + "message TEXT NOT NULL, "
 				+ "timestamp DATETIME NOT NULL, " + "is_read BOOLEAN DEFAULT 0" + ")";
 		statement.execute(MessageTable);
+		// create admin requests table
+		String adminRequestsTable = "CREATE TABLE IF NOT EXISTS AdminRequests ("
+		        + "id INT AUTO_INCREMENT PRIMARY KEY, "
+		        + "createdBy VARCHAR(255) NOT NULL, "
+		        + "description TEXT NOT NULL, "
+		        + "status VARCHAR(20) NOT NULL DEFAULT 'open', "
+		        + "response TEXT, "
+		        + "originalRequestId INT DEFAULT -1)";
+		statement.execute(adminRequestsTable);
+		
+		
 	}
 	/**
 	 * Inserts a new message into the database and returns the generated message ID.
@@ -1960,28 +1973,184 @@ public class Database {
 	}
 
 	/*******
-	 * <p>
-	 * Method: void closeConnection()
-	 * </p>
+	 * <p> Method: void closeConnection()</p>
 	 * 
-	 * <p>
-	 * Description: Closes the database statement and connection.
-	 * </p>
+	 * <p> Description: Closes the database statement and connection.</p>
 	 * 
 	 */
 	// Closes the database statement and connection.
 	public void closeConnection() {
-		try {
-			if (statement != null)
-				statement.close();
-		} catch (SQLException se2) {
+		try{ 
+			if(statement!=null) statement.close(); 
+		} catch(SQLException se2) { 
 			se2.printStackTrace();
-		}
-		try {
-			if (connection != null)
-				connection.close();
-		} catch (SQLException se) {
-			se.printStackTrace();
-		}
+		} 
+		try { 
+			if(connection!=null) connection.close(); 
+		} catch(SQLException se){ 			se.printStackTrace(); 
+		} 
 	}
+	
+	/*******
+	 * <p> Method: getRequestsByStatus(String status)</p>
+	 * 
+	 * <p> Description: Retrieves a list of admin requests that match a specific status ("open" or "closed").</p>
+	 */
+	
+	public List<AdminRequest> getRequestsByStatus(String status) {
+	    List<AdminRequest> requests = new ArrayList<>();
+	    String query = "SELECT * FROM AdminRequests WHERE status = ?";
+	    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+	        stmt.setString(1, status);
+	        ResultSet rs = stmt.executeQuery();
+	        while (rs.next()) {
+	            AdminRequest req = new AdminRequest(
+	                rs.getInt("id"),
+	                rs.getString("createdBy"),
+	                rs.getString("description"),
+	                rs.getString("response"),
+	                rs.getString("status")
+	            );
+	            requests.add(req);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return requests;
+	}
+	/*******
+	 * <p> Method: getAllClosedRequests()</p>
+	 * 
+	 * <p> Description: Retrieves all admin requests that are currently marked as "closed".</p>
+	 */
+	
+	public List<AdminRequest> getAllClosedRequests() {
+	    List<AdminRequest> list = new ArrayList<>();
+	    String query = "SELECT * FROM AdminRequests WHERE status = 'closed'";
+	    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+	        ResultSet rs = stmt.executeQuery();
+	        while (rs.next()) {
+	            AdminRequest request = new AdminRequest(
+	                rs.getInt("id"),
+	                rs.getString("createdBy"),
+	                rs.getString("description"),
+	                rs.getString("response"),
+	                rs.getString("status")
+	            );
+	            list.add(request);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return list;
+	}
+
+	/*******
+	 * <p> Method: void respondToRequest(int requestId, String responseText)</p>
+	 * 
+	 * <p> Description: Updates an admin request with a response message and marks it as "closed".</p>
+	 */
+	
+	
+	public void respondToRequest(int requestId, String responseText) {
+	    String query = "UPDATE AdminRequests SET response = ?, status = 'closed' WHERE id = ?";
+	    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+	        stmt.setString(1, responseText);
+	        stmt.setInt(2, requestId);
+	        stmt.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	/*******
+	 * <p> Method: void reopenRequest(int closedRequestId, String createdBy, String updatedDescription)</p>
+	 * 
+	 * <p> Description: Reopens a previously closed request by inserting a new open request linked to the original.</p>
+	 */
+
+	public void reopenRequest(int closedRequestId, String createdBy, String updatedDescription) {
+	    String query = "INSERT INTO AdminRequests (createdBy, description, status, originalRequestId) VALUES (?, ?, 'open', ?)";
+	    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+	        stmt.setString(1, createdBy);
+	        stmt.setString(2, updatedDescription);
+	        stmt.setInt(3, closedRequestId); 
+	        stmt.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	/*******
+	 * <p> Method: AdminRequest getClosedRequestById(int id)</p>
+	 * 
+	 * <p> Description: Retrieves a closed admin request by its ID. Returns null if not found.</p>
+	 */
+	
+	public AdminRequest getClosedRequestById(int id) {
+	    String query = "SELECT * FROM AdminRequests WHERE id = ? AND status = 'closed'";
+	    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+	        stmt.setInt(1, id);
+	        ResultSet rs = stmt.executeQuery();
+	        if (rs.next()) {
+	            return new AdminRequest(
+	                rs.getInt("id"),
+	                rs.getString("createdBy"),
+	                rs.getString("description"),
+	                rs.getString("response"),
+	                rs.getString("status")
+	            );
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+	/*******
+	 * <p> Method: void createRequest(String createdBy, String description)</p>
+	 * 
+	 * <p> Description: Inserts a new admin request into the database with the status "open".</p>
+	 */
+	
+	public void createRequest(String createdBy, String description) {
+	    String query = "INSERT INTO AdminRequests (createdBy, description, status) VALUES (?, ?, 'open')";
+	    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+	        stmt.setString(1, createdBy);
+	        stmt.setString(2, description);
+	        stmt.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	}
+	    
+	/*******
+	 * <p> Method: void insertTestClosedRequestOnce()</p>
+	 * 
+	 * <p> Description: Inserts a test admin request marked as "closed" only if it doesn't already exist.</p>
+	 */
+	
+	    public void insertTestClosedRequestOnce() {
+	        String checkQuery = "SELECT COUNT(*) FROM AdminRequests WHERE description = 'Test closed request'";
+	        String insertQuery = "INSERT INTO AdminRequests (createdBy, description, status, response) " +
+	                             "VALUES ('John Doe', 'Test closed request', 'closed', 'This was handled.')";
+
+	        try (
+	            PreparedStatement checkStmt = connection.prepareStatement(checkQuery);
+	            ResultSet rs = checkStmt.executeQuery()
+	        ) {
+	            if (rs.next() && rs.getInt(1) == 0) {
+	                try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
+	                    insertStmt.executeUpdate();
+	                    System.out.println(" Test closed request inserted.");
+	                }
+	            } else {
+	                System.out.println(" Test closed request already exists. Skipping insert.");
+	            }
+	        } catch (SQLException e) {
+	            System.err.println(" Failed to insert test closed request:");
+	            e.printStackTrace();
+	        }
+	    
+	    }
 }
