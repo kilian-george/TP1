@@ -10,9 +10,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-//import java.util.HashMap;
 import java.util.List;
-//import java.util.Map;
 import java.util.UUID;
 import entityClasses.User;
 import entityClasses.Review;
@@ -20,6 +18,7 @@ import questionAndAnswer.Answer;
 import questionAndAnswer.Comment;
 import questionAndAnswer.Question;
 import privateMessages.Message;
+import reviewerScorecardSettings.ScorecardParameters;
 
 /*******
  * <p>
@@ -236,6 +235,18 @@ public class Database {
 			    ")";
 			statement.execute(reviewerProfilesTable);
 				
+		String scorecardTable = "CREATE TABLE IF NOT EXISTS ScorecardParameters (" +
+				 " id INT AUTO_INCREMENT PRIMARY KEY," +
+				  "    min_reviews INT," +
+				  "    min_rating DOUBLE," +
+				  "    averageRatingWeight DOUBLE," +
+				  "    reviewCountWeight DOUBLE," +
+				  "    responseTimeWeight DOUBLE," +
+				  "    feedbackQualityWeight DOUBLE," +
+				  "    lastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+				 ");";	
+			statement.execute(scorecardTable);
+	
 	}
 
 	/**
@@ -911,6 +922,67 @@ public class Database {
 //		
 //	}
 
+	public ScorecardParameters getScorecardParameters() {
+		 try (PreparedStatement stmt = connection.prepareStatement(
+		            "SELECT * FROM ScorecardParameters WHERE id = 1")) {
+		        ResultSet rs = stmt.executeQuery();
+		        if (rs.next()) {
+		            return new ScorecardParameters(
+		                rs.getInt("min_reviews"),
+		                rs.getDouble("min_rating"),
+		                rs.getDouble("reviewCountWeight"),
+		                rs.getDouble("averageRatingWeight"),
+		                rs.getDouble("responseTimeWeight"),
+		                rs.getDouble("feedbackQualityWeight")
+		            );
+		        }
+		    } catch (SQLException e) {
+		        e.printStackTrace();
+		    }
+		    return null;
+	}
+	
+	public boolean updateScorecardParameters(ScorecardParameters params) {
+		 try (PreparedStatement stmt = connection.prepareStatement(
+		            "UPDATE ScorecardParameters SET " +
+		            "min_reviews = ?, min_rating = ?, " +
+		            "reviewCountWeight = ?, averageRatingWeight = ?, " +
+		            "responseTimeWeight = ?, feedbackQualityWeight = ?, " +
+		            "lastUpdated = CURRENT_TIMESTAMP " +
+		            "WHERE id = 1")) {
+		        
+		        stmt.setInt(1, params.minReviews);
+		        stmt.setDouble(2, params.minRating);
+		        stmt.setDouble(3, params.reviewCountWeight);
+		        stmt.setDouble(4, params.averageRatingWeight);
+		        stmt.setDouble(5, params.responseTimeWeight);
+		        stmt.setDouble(6, params.feedbackQualityWeight);
+
+		        int affectedRows = stmt.executeUpdate();
+
+		        // If no row was updated, insert the default row
+		        if (affectedRows == 0) {
+		            try (PreparedStatement insertStmt = connection.prepareStatement(
+		                    "INSERT INTO ScorecardParameters " +
+		                    "(id, min_reviews, min_rating, reviewCountWeight, averageRatingWeight, responseTimeWeight, feedbackQualityWeight) " +
+		                    "VALUES (1, ?, ?, ?, ?, ?, ?)")) {
+
+		                insertStmt.setInt(1, params.minReviews);
+		                insertStmt.setDouble(2, params.minRating);
+		                insertStmt.setDouble(3, params.reviewCountWeight);
+		                insertStmt.setDouble(4, params.averageRatingWeight);
+		                insertStmt.setDouble(5, params.responseTimeWeight);
+		                insertStmt.setDouble(6, params.feedbackQualityWeight);
+
+		                insertStmt.executeUpdate();
+		            }
+		        }
+		        return true;
+		    } catch (SQLException e) {
+		        e.printStackTrace();
+		    }
+		    return false;
+	}
 	
 	/*******
 	 * <p>
